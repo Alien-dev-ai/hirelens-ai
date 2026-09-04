@@ -13,10 +13,10 @@ experience, or any other personal information that is not explicitly
 supported by the CV text. If something is unclear or absent, the
 corresponding field is left empty/omitted rather than guessed.
 
-This module depends only on the reusable :class:`GeminiLLMService`
-abstraction (``src.services.llm_service``) — it never imports
-``google.genai`` directly — and validates the LLM's output against the
-existing ``CandidateProfile`` Pydantic model before returning it.
+This module depends only on the reusable :class:`GroqLLMService`
+abstraction (``src.services.llm_service``) — it never imports the Groq SDK
+directly — and validates the LLM's output against the existing
+``CandidateProfile`` Pydantic model before returning it.
 
 SECURITY NOTE: CV text may contain candidate personal information and is
 never logged by this module.
@@ -31,7 +31,7 @@ from pydantic import ValidationError
 
 from src.models.schemas import CandidateProfile
 from src.services.llm_service import (
-    GeminiLLMService,
+    GroqLLMService,
     LLMQuotaExceededError,
     LLMServiceError,
 )
@@ -116,20 +116,20 @@ class CandidateAnalyzerError(Exception):
 class CandidateAnalyzer:
     """Normalizes candidate CV text into a structured ``CandidateProfile``.
 
-    Uses an injected :class:`GeminiLLMService` (or any compatible stub/mock
+    Uses an injected :class:`GroqLLMService` (or any compatible stub/mock
     exposing a ``generate_text(prompt, system_instruction=None) -> str``
     method) to perform the extraction, keeping this class independent of
     any specific LLM SDK.
     """
 
-    def __init__(self, llm_service: GeminiLLMService) -> None:
+    def __init__(self, llm_service: GroqLLMService) -> None:
         """Initialize the analyzer.
 
         Args:
             llm_service: An LLM service used to perform text generation.
                 Any object implementing ``generate_text`` is accepted, so
                 tests can inject a fake or mock in place of
-                ``GeminiLLMService``.
+                ``GroqLLMService``.
         """
         self._llm_service = llm_service
 
@@ -164,7 +164,7 @@ class CandidateAnalyzer:
             )
         except LLMQuotaExceededError as exc:
             raise CandidateAnalyzerError(
-                "Candidate analysis failed because the Gemini API quota or "
+                "Candidate analysis failed because the Groq API quota or "
                 "rate limit has been reached. Please wait a bit and try "
                 "again later."
             ) from exc

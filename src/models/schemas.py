@@ -1,16 +1,30 @@
 """Core data models for HireLens AI.
 
 These Pydantic models define the shared data contracts used across the
-document extraction, evidence-matching, and dossier-generation stages of
-the pipeline.
+document extraction, evidence-matching, alignment-scoring, and
+dossier-generation stages of the pipeline.
 
-IMPORTANT PRODUCT BOUNDARY:
-These models represent *evidence extracted from submitted documents only*.
-Nothing here should be read as a hiring recommendation, suitability score,
-or ranking. In particular, ``EvidenceStatus.no_evidence_found`` means no
-explicit supporting evidence was located in the submitted document(s) — it
-must never be interpreted as proof that a candidate lacks a given skill.
-All hiring decisions remain with human recruiters and hiring managers.
+PRODUCT DIRECTION:
+HireLens is a recruiter-facing candidate analysis and *decision-support*
+system: it computes a deterministic alignment score and a grounded,
+LLM-synthesized recruiter analysis (see ``AlignmentScore`` and
+``RecruiterAnalysis`` below), in addition to the underlying evidence data.
+
+IMPORTANT BOUNDARIES that still apply, unchanged, to everything in this
+module:
+- Nothing here is, or claims to be, an objective or certain hiring
+  decision. ``AlignmentScore`` and ``RecruiterAnalysis`` support a human
+  recruiter's own judgment; they never replace it, and no field here
+  represents an accept/reject/hire outcome.
+- ``EvidenceStatus.no_evidence_found`` means no explicit supporting
+  evidence was located in the submitted document(s) — it must never be
+  interpreted, anywhere downstream, as proof that a candidate lacks a
+  given skill. Every gap-facing field must be phrased as "not evidenced",
+  never as a confirmed absence.
+- Scoring and analysis must never use or infer protected characteristics
+  (race, ethnicity, religion, gender, age, disability, marital status,
+  nationality, appearance, health, or similar) — nothing in these models
+  carries such information in the first place.
 """
 
 from __future__ import annotations
@@ -176,6 +190,76 @@ class EvidenceMatch(BaseModel):
 
 
 # ---------------------------------------------------------------------------
+# Alignment scoring
+# ---------------------------------------------------------------------------
+
+
+class RequirementCoverage(BaseModel):
+    """Deterministic evidence-coverage counts for one requirement-importance level.
+
+    A plain tally of the ``EvidenceMatch`` statuses already produced by the
+    Evidence Matcher, grouped by whether the job description marked the
+    requirement as required, preferred, or unclear. Carries no judgment of
+    its own about the candidate — see ``AlignmentScorer``.
+    """
+
+    importance: RequirementImportance = Field(
+        ..., description="The requirement-importance level this coverage row summarizes."
+    )
+    total: int = Field(..., ge=0, description="Total requirements at this importance level.")
+    evidence_found: int = Field(..., ge=0, description="Requirements with status='evidence_found'.")
+    no_evidence_found: int = Field(..., ge=0, description="Requirements with status='no_evidence_found'.")
+    needs_verification: int = Field(..., ge=0, description="Requirements with status='needs_verification'.")
+
+
+class AlignmentScore(BaseModel):
+    """A deterministic, code-computed candidate-to-role alignment score.
+
+    IMPORTANT: This score is decision *support*, not a hiring decision. It
+    represents how strongly the candidate's documented evidence covers the
+    job's stated requirements — nothing more, and no claim of certainty or
+    objective hiring probability. It is computed entirely by application
+    logic (``src.services.alignment_scorer.AlignmentScorer``) from existing
+    ``EvidenceMatch`` statuses; the LLM is never asked to invent or adjust
+    this number. Missing evidence is never treated as confirmed absence of
+    a skill: a zero-evidence requirement earns no credit because there is
+    nothing to credit, which is different from asserting the candidate
+    lacks it.
+    """
+
+    overall_score: int = Field(
+        ..., ge=0, le=100, description="Overall alignment score from 0-100, computed deterministically."
+    )
+    alignment_label: str = Field(
+        ..., description="Human-readable band for overall_score, e.g. 'Strong Alignment'."
+    )
+    required_score: float = Field(
+        ..., ge=0.0, le=100.0, description="Sub-score (0-100) for required requirements only."
+    )
+    preferred_score: float = Field(
+        ...,
+        ge=0.0,
+        le=100.0,
+        description=(
+            "Sub-score (0-100) for non-required requirements (preferred and "
+            "unclear-importance combined — see AlignmentScorer for why)."
+        ),
+    )
+    required_weight: float = Field(
+        ..., ge=0.0, le=1.0, description="Weight given to required_score in the overall score."
+    )
+    preferred_weight: float = Field(
+        ..., ge=0.0, le=1.0, description="Weight given to preferred_score in the overall score."
+    )
+    coverage: list[RequirementCoverage] = Field(
+        default_factory=list, description="Evidence-coverage breakdown per importance level."
+    )
+    methodology_note: str = Field(
+        ..., description="Fixed, human-readable explanation of how overall_score was computed."
+    )
+
+
+# ---------------------------------------------------------------------------
 # Interview questions
 # ---------------------------------------------------------------------------
 
@@ -196,23 +280,78 @@ class InterviewQuestion(BaseModel):
 
 
 # ---------------------------------------------------------------------------
+# Recruiter analysis
+# ---------------------------------------------------------------------------
+
+
+class RecruiterAnalysis(BaseModel):
+    """An LLM-synthesized, evidence-grounded narrative analysis for a recruiter.
+
+    IMPORTANT: This is a synthesis of evidence already gathered by the
+    Evidence Matcher and the deterministic ``AlignmentScore`` — generated
+    under strict grounding rules that forbid inventing skills, employers,
+    education, experience, or certifications, and forbid treating "no
+    evidence found" as proof of absence (gaps must read as "not evidenced
+    in the submitted CV", never "does not have"/"lacks"). It supports a
+    human recruiter's judgment; it is never itself a hiring decision, and
+    it must never reference protected characteristics (race, ethnicity,
+    religion, gender, age, disability, marital status, nationality,
+    appearance, health, or similar).
+    """
+
+    summary: str = Field(
+        ..., description="Detailed natural-language synthesis of how the candidate's evidence aligns with the role."
+    )
+    strengths: list[str] = Field(
+        default_factory=list, description="Candidate strengths grounded in explicit evidence."
+    )
+    gaps: list[str] = Field(
+        default_factory=list,
+        description=(
+            "Requirements not evidenced in the submitted documents, phrased as "
+            "'not evidenced', never as a confirmed absence."
+        ),
+    )
+    validation_areas: list[str] = Field(
+        default_factory=list,
+        description=(
+            "The most important things a recruiter should validate directly "
+            "with the candidate, prioritized by requirement importance and "
+            "evidence gaps."
+        ),
+    )
+
+
+# ---------------------------------------------------------------------------
 # Candidate dossier
 # ---------------------------------------------------------------------------
 
 
 class CandidateDossier(BaseModel):
-    """The final evidence-based dossier generated for a candidate.
+    """The final recruiter-facing dossier generated for a candidate.
 
-    This dossier summarizes evidence found in the candidate's submitted
-    documents relative to a job's requirements, and suggests interview
+    Combines the underlying evidence (candidate profile, job requirements,
+    per-requirement evidence matches) with a deterministic alignment score
+    and an LLM-synthesized recruiter analysis, plus suggested interview
     questions to help a human recruiter verify unclear or missing areas.
-    It contains no hiring recommendation, ranking, or suitability judgment.
+
+    IMPORTANT: ``alignment_score`` and ``recruiter_analysis`` are decision
+    *support* — a structured, evidence-grounded starting point for a human
+    recruiter's own judgment. Neither is, or should be treated as, an
+    objective or certain hiring decision; the human recruiter always makes
+    the final call.
     """
 
     candidate_profile: CandidateProfile = Field(..., description="Structured candidate profile.")
     job_requirements: JobRequirements = Field(..., description="Requirements the candidate is being evaluated against.")
     evidence_matches: list[EvidenceMatch] = Field(
         default_factory=list, description="Evidence matches for each job requirement."
+    )
+    alignment_score: AlignmentScore = Field(
+        ..., description="Deterministic candidate-to-role alignment score, computed from evidence_matches."
+    )
+    recruiter_analysis: RecruiterAnalysis = Field(
+        ..., description="LLM-synthesized, evidence-grounded recruiter analysis."
     )
     interview_questions: list[InterviewQuestion] = Field(
         default_factory=list, description="Suggested interview questions for human follow-up."

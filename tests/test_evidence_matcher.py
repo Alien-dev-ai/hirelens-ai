@@ -1,7 +1,7 @@
 """Tests for src/services/evidence_matcher.py.
 
-These tests never make real Gemini API calls: a fake LLM service is
-injected into ``EvidenceMatcher`` in place of ``GeminiLLMService``.
+These tests never make real Groq API calls: a fake LLM service is
+injected into ``EvidenceMatcher`` in place of ``GroqLLMService``.
 """
 
 from __future__ import annotations
@@ -24,7 +24,7 @@ from src.services.llm_service import LLMServiceError
 
 
 class _FakeLLMService:
-    """Stub for GeminiLLMService that records the last call and returns a canned response."""
+    """Stub for GroqLLMService that records the last call and returns a canned response."""
 
     def __init__(self, response_text: str | None = None, error: Exception | None = None):
         self.response_text = response_text
@@ -307,7 +307,7 @@ def test_llm_service_failure_falls_back_to_needs_verification():
     job_requirements = JobRequirements(
         requirements=[_make_requirement("req-1", "Experience with distributed systems")]
     )
-    fake_llm = _FakeLLMService(error=LLMServiceError("Gemini API request failed."))
+    fake_llm = _FakeLLMService(error=LLMServiceError("Groq API request failed."))
     matcher = EvidenceMatcher(fake_llm)
 
     matches = matcher.match(profile, job_requirements)

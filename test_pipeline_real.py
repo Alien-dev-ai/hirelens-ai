@@ -1,4 +1,4 @@
-from src.services.llm_service import GeminiLLMService
+from src.services.llm_service import GroqLLMService
 from src.services.hirelens_pipeline import HireLensPipeline
 
 
@@ -34,15 +34,17 @@ Responsibilities:
 """
 
     try:
-        print("\n[1/5] Initializing Gemini...")
-        llm_service = GeminiLLMService()
+        print("\n[1/5] Initializing Groq...")
+        llm_service = GroqLLMService()
 
         print("[2/5] Initializing HireLens pipeline...")
         pipeline = HireLensPipeline.create(llm_service)
 
-        print("[3/5] Extracting and analyzing candidate CV...")
-        print("[4/5] Analyzing job description...")
-        print("[5/5] Matching evidence and generating interview questions...")
+        print("[3/7] Extracting and analyzing candidate CV...")
+        print("[4/7] Analyzing job description...")
+        print("[5/7] Matching evidence...")
+        print("[6/7] Computing alignment score and recruiter analysis...")
+        print("[7/7] Generating interview questions...")
 
         dossier = pipeline.analyze(
             cv_file_path=cv_file_path,

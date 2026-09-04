@@ -1,7 +1,7 @@
 """Tests for src/services/candidate_analyzer.py.
 
-These tests never make real Gemini API calls: a fake LLM service is
-injected into ``CandidateAnalyzer`` in place of ``GeminiLLMService``.
+These tests never make real Groq API calls: a fake LLM service is
+injected into ``CandidateAnalyzer`` in place of ``GroqLLMService``.
 """
 
 from __future__ import annotations
@@ -56,7 +56,7 @@ SAMPLE_CV_TEXT = (
 
 
 class _FakeLLMService:
-    """Stub for GeminiLLMService that records the last call and returns a canned response."""
+    """Stub for GroqLLMService that records the last call and returns a canned response."""
 
     def __init__(self, response_text: str | None = None, error: Exception | None = None):
         self.response_text = response_text
@@ -143,7 +143,7 @@ def test_empty_llm_response_raises_meaningful_error():
 
 def test_llm_service_failure_is_handled_cleanly():
     """An LLMServiceError from the underlying service should be wrapped, not leaked."""
-    original_error = LLMServiceError("Gemini API request failed.")
+    original_error = LLMServiceError("Groq API request failed.")
     fake_llm = _FakeLLMService(error=original_error)
     analyzer = CandidateAnalyzer(fake_llm)
 

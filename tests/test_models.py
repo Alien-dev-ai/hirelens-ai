@@ -6,6 +6,7 @@ import pytest
 from pydantic import ValidationError
 
 from src.models.schemas import (
+    AlignmentScore,
     CandidateDossier,
     CandidateExperience,
     CandidateProfile,
@@ -13,6 +14,8 @@ from src.models.schemas import (
     EvidenceStatus,
     JobRequirement,
     JobRequirements,
+    RecruiterAnalysis,
+    RequirementCoverage,
     RequirementImportance,
 )
 
@@ -112,8 +115,38 @@ def test_no_evidence_found_status_is_representable_without_disproving_skill():
     assert match.evidence == []
 
 
+def _make_alignment_score(overall_score: int = 90) -> AlignmentScore:
+    return AlignmentScore(
+        overall_score=overall_score,
+        alignment_label="Strong Alignment",
+        required_score=90.0,
+        preferred_score=0.0,
+        required_weight=1.0,
+        preferred_weight=0.0,
+        coverage=[
+            RequirementCoverage(
+                importance=RequirementImportance.required,
+                total=1,
+                evidence_found=1,
+                no_evidence_found=0,
+                needs_verification=0,
+            )
+        ],
+        methodology_note="Computed deterministically from evidence-match statuses.",
+    )
+
+
+def _make_recruiter_analysis() -> RecruiterAnalysis:
+    return RecruiterAnalysis(
+        summary="Strong alignment with the core requirements.",
+        strengths=["Evidence found for 'Proficiency in Python'."],
+        gaps=[],
+        validation_areas=[],
+    )
+
+
 def test_valid_candidate_dossier_creation():
-    """A CandidateDossier should assemble profile, requirements, matches, and questions."""
+    """A CandidateDossier should assemble profile, requirements, matches, score, and analysis."""
     profile = CandidateProfile(full_name="Sam Lee", skills=["Python"])
     job_requirements = JobRequirements(
         role_title="Backend Engineer",
@@ -133,6 +166,8 @@ def test_valid_candidate_dossier_creation():
         candidate_profile=profile,
         job_requirements=job_requirements,
         evidence_matches=evidence_matches,
+        alignment_score=_make_alignment_score(),
+        recruiter_analysis=_make_recruiter_analysis(),
         interview_questions=[],
         warnings=[],
     )
@@ -140,6 +175,8 @@ def test_valid_candidate_dossier_creation():
     assert dossier.candidate_profile.full_name == "Sam Lee"
     assert dossier.job_requirements.role_title == "Backend Engineer"
     assert len(dossier.evidence_matches) == 1
+    assert dossier.alignment_score.overall_score == 90
+    assert dossier.recruiter_analysis.summary
     assert isinstance(dossier.generated_at, datetime)
 
 
@@ -147,3 +184,20 @@ def test_candidate_dossier_requires_profile_and_requirements():
     """CandidateDossier should fail validation when required fields are missing."""
     with pytest.raises(ValidationError):
         CandidateDossier()
+
+
+def test_alignment_score_rejects_out_of_range_overall_score():
+    """overall_score must stay within the documented 0-100 bound."""
+    with pytest.raises(ValidationError):
+        _make_alignment_score(overall_score=101)
+
+    with pytest.raises(ValidationError):
+        _make_alignment_score(overall_score=-1)
+
+
+def test_recruiter_analysis_defaults_to_empty_lists():
+    """strengths/gaps/validation_areas should default to empty lists, not error, when omitted."""
+    analysis = RecruiterAnalysis(summary="No specific evidence was available to synthesize.")
+    assert analysis.strengths == []
+    assert analysis.gaps == []
+    assert analysis.validation_areas == []

@@ -1,10 +1,10 @@
 """Tests for src/services/hirelens_pipeline.py.
 
-These tests never make real Gemini API calls: every sub-service and the
+These tests never make real Groq API calls: every sub-service and the
 document extractor are injected as fakes/mocks — including plain,
 duck-typed objects that are not instances of the real service classes at
 all, demonstrating that the pipeline depends only on the service
-interfaces, never on ``google.genai`` or any concrete LLM-backed
+interfaces, never on the Groq SDK or any concrete LLM-backed
 implementation.
 """
 
@@ -16,6 +16,7 @@ import inspect
 import pytest
 
 from src.models.schemas import (
+    AlignmentScore,
     CandidateDossier,
     CandidateProfile,
     EvidenceMatch,
@@ -24,12 +25,16 @@ from src.models.schemas import (
     InterviewQuestion,
     JobRequirement,
     JobRequirements,
+    RecruiterAnalysis,
+    RequirementCoverage,
     RequirementImportance,
 )
+from src.services.alignment_scorer import AlignmentScorerError
 from src.services.candidate_analyzer import CandidateAnalyzerError
 from src.services.evidence_matcher import EvidenceMatcherError
 from src.services.interview_generator import InterviewQuestionGeneratorError
 from src.services.jd_analyzer import JobDescriptionAnalyzerError
+from src.services.recruiter_analysis_generator import RecruiterAnalysisGeneratorError
 import src.services.hirelens_pipeline as hirelens_pipeline_module
 from src.services.hirelens_pipeline import HireLensPipeline, HireLensPipelineError
 
@@ -74,6 +79,38 @@ class _FakeEvidenceMatcher:
         if self.error is not None:
             raise self.error
         return self.matches
+
+
+class _FakeAlignmentScorer:
+    def __init__(self, alignment_score: AlignmentScore | None = None, error: Exception | None = None):
+        self.alignment_score = alignment_score
+        self.error = error
+        self.calls: list[tuple] = []
+
+    def score(self, job_requirements: JobRequirements, evidence_matches: list[EvidenceMatch]) -> AlignmentScore:
+        self.calls.append((job_requirements, evidence_matches))
+        if self.error is not None:
+            raise self.error
+        return self.alignment_score
+
+
+class _FakeRecruiterAnalysisGenerator:
+    def __init__(self, recruiter_analysis: RecruiterAnalysis | None = None, error: Exception | None = None):
+        self.recruiter_analysis = recruiter_analysis
+        self.error = error
+        self.calls: list[tuple] = []
+
+    def generate(
+        self,
+        candidate_profile: CandidateProfile,
+        job_requirements: JobRequirements,
+        evidence_matches: list[EvidenceMatch],
+        alignment_score: AlignmentScore,
+    ) -> RecruiterAnalysis:
+        self.calls.append((candidate_profile, job_requirements, evidence_matches, alignment_score))
+        if self.error is not None:
+            raise self.error
+        return self.recruiter_analysis
 
 
 class _FakeInterviewGenerator:
@@ -135,6 +172,30 @@ EVIDENCE_MATCHES = [
         confidence=0.9,
     )
 ]
+ALIGNMENT_SCORE = AlignmentScore(
+    overall_score=100,
+    alignment_label="Strong Alignment",
+    required_score=100.0,
+    preferred_score=0.0,
+    required_weight=1.0,
+    preferred_weight=0.0,
+    coverage=[
+        RequirementCoverage(
+            importance=RequirementImportance.required,
+            total=1,
+            evidence_found=1,
+            no_evidence_found=0,
+            needs_verification=0,
+        )
+    ],
+    methodology_note="Computed deterministically from evidence-match statuses.",
+)
+RECRUITER_ANALYSIS = RecruiterAnalysis(
+    summary="Strong alignment with the core requirements.",
+    strengths=["Evidence found for 'Python'."],
+    gaps=[],
+    validation_areas=[],
+)
 INTERVIEW_QUESTIONS = [
     InterviewQuestion(
         question="Can you walk me through your Python experience?",
@@ -149,26 +210,44 @@ def _build_pipeline(
     profile=CANDIDATE_PROFILE,
     requirements=JOB_REQUIREMENTS,
     matches=EVIDENCE_MATCHES,
+    alignment_score=ALIGNMENT_SCORE,
+    recruiter_analysis=RECRUITER_ANALYSIS,
     questions=INTERVIEW_QUESTIONS,
     candidate_error=None,
     jd_error=None,
     matcher_error=None,
+    scorer_error=None,
+    analysis_error=None,
     generator_error=None,
     extract_fn=None,
 ):
     candidate_analyzer = _FakeCandidateAnalyzer(profile=profile, error=candidate_error)
     jd_analyzer = _FakeJDAnalyzer(requirements=requirements, error=jd_error)
     evidence_matcher = _FakeEvidenceMatcher(matches=matches, error=matcher_error)
+    alignment_scorer = _FakeAlignmentScorer(alignment_score=alignment_score, error=scorer_error)
+    recruiter_analysis_generator = _FakeRecruiterAnalysisGenerator(
+        recruiter_analysis=recruiter_analysis, error=analysis_error
+    )
     interview_generator = _FakeInterviewGenerator(questions=questions, error=generator_error)
 
     pipeline = HireLensPipeline(
         candidate_analyzer=candidate_analyzer,
         jd_analyzer=jd_analyzer,
         evidence_matcher=evidence_matcher,
+        alignment_scorer=alignment_scorer,
+        recruiter_analysis_generator=recruiter_analysis_generator,
         interview_generator=interview_generator,
         extract_document_fn=extract_fn or _fake_extract_document_fn(),
     )
-    return pipeline, candidate_analyzer, jd_analyzer, evidence_matcher, interview_generator
+    return (
+        pipeline,
+        candidate_analyzer,
+        jd_analyzer,
+        evidence_matcher,
+        alignment_scorer,
+        recruiter_analysis_generator,
+        interview_generator,
+    )
 
 
 # --- Tests ---------------------------------------------------------------
@@ -184,12 +263,22 @@ def test_successful_end_to_end_pipeline_execution():
     assert dossier.candidate_profile == CANDIDATE_PROFILE
     assert dossier.job_requirements == JOB_REQUIREMENTS
     assert dossier.evidence_matches == EVIDENCE_MATCHES
+    assert dossier.alignment_score == ALIGNMENT_SCORE
+    assert dossier.recruiter_analysis == RECRUITER_ANALYSIS
     assert dossier.interview_questions == INTERVIEW_QUESTIONS
 
 
 def test_document_extraction_failure_raises_pipeline_error():
     """A failed document extraction should stop the pipeline with a clear error."""
-    pipeline, candidate_analyzer, jd_analyzer, evidence_matcher, interview_generator = _build_pipeline(
+    (
+        pipeline,
+        candidate_analyzer,
+        jd_analyzer,
+        evidence_matcher,
+        alignment_scorer,
+        recruiter_analysis_generator,
+        interview_generator,
+    ) = _build_pipeline(
         extract_fn=_fake_failing_extract_document_fn("File not found: candidate.pdf"),
     )
 
@@ -200,6 +289,8 @@ def test_document_extraction_failure_raises_pipeline_error():
     assert candidate_analyzer.calls == []
     assert jd_analyzer.calls == []
     assert evidence_matcher.calls == []
+    assert alignment_scorer.calls == []
+    assert recruiter_analysis_generator.calls == []
     assert interview_generator.calls == []
 
 
@@ -216,9 +307,15 @@ def test_candidate_analyzer_failure_raises_pipeline_error_with_cause():
 
 def test_job_description_analyzer_failure_raises_pipeline_error_with_cause():
     original_error = JobDescriptionAnalyzerError("Cannot analyze empty job description text.")
-    pipeline, candidate_analyzer, jd_analyzer, evidence_matcher, interview_generator = _build_pipeline(
-        jd_error=original_error,
-    )
+    (
+        pipeline,
+        candidate_analyzer,
+        jd_analyzer,
+        evidence_matcher,
+        alignment_scorer,
+        recruiter_analysis_generator,
+        interview_generator,
+    ) = _build_pipeline(jd_error=original_error)
 
     with pytest.raises(HireLensPipelineError) as exc_info:
         pipeline.analyze("candidate.pdf", "")
@@ -227,20 +324,77 @@ def test_job_description_analyzer_failure_raises_pipeline_error_with_cause():
     assert exc_info.value.__cause__ is original_error
     # Candidate analysis runs before JD analysis, so it should have been called.
     assert len(candidate_analyzer.calls) == 1
-    # Evidence matching and interview generation must never run after this failure.
+    # Everything downstream of JD analysis must never run after this failure.
     assert evidence_matcher.calls == []
+    assert alignment_scorer.calls == []
+    assert recruiter_analysis_generator.calls == []
     assert interview_generator.calls == []
 
 
 def test_evidence_matcher_failure_raises_pipeline_error_with_cause():
     original_error = EvidenceMatcherError("candidate_profile is required.")
-    pipeline, *_ = _build_pipeline(matcher_error=original_error)
+    (
+        pipeline,
+        candidate_analyzer,
+        jd_analyzer,
+        evidence_matcher,
+        alignment_scorer,
+        recruiter_analysis_generator,
+        interview_generator,
+    ) = _build_pipeline(matcher_error=original_error)
 
     with pytest.raises(HireLensPipelineError) as exc_info:
         pipeline.analyze("candidate.pdf", "Backend Engineer job description")
 
     assert "evidence matching" in str(exc_info.value).lower()
     assert exc_info.value.__cause__ is original_error
+    # Everything downstream of evidence matching must never run after this failure.
+    assert alignment_scorer.calls == []
+    assert recruiter_analysis_generator.calls == []
+    assert interview_generator.calls == []
+
+
+def test_alignment_scorer_failure_raises_pipeline_error_with_cause():
+    original_error = AlignmentScorerError("job_requirements is required.")
+    (
+        pipeline,
+        candidate_analyzer,
+        jd_analyzer,
+        evidence_matcher,
+        alignment_scorer,
+        recruiter_analysis_generator,
+        interview_generator,
+    ) = _build_pipeline(scorer_error=original_error)
+
+    with pytest.raises(HireLensPipelineError) as exc_info:
+        pipeline.analyze("candidate.pdf", "Backend Engineer job description")
+
+    assert "alignment scoring" in str(exc_info.value).lower()
+    assert exc_info.value.__cause__ is original_error
+    # Everything downstream of alignment scoring must never run after this failure.
+    assert recruiter_analysis_generator.calls == []
+    assert interview_generator.calls == []
+
+
+def test_recruiter_analysis_generator_failure_raises_pipeline_error_with_cause():
+    original_error = RecruiterAnalysisGeneratorError("alignment_score is required.")
+    (
+        pipeline,
+        candidate_analyzer,
+        jd_analyzer,
+        evidence_matcher,
+        alignment_scorer,
+        recruiter_analysis_generator,
+        interview_generator,
+    ) = _build_pipeline(analysis_error=original_error)
+
+    with pytest.raises(HireLensPipelineError) as exc_info:
+        pipeline.analyze("candidate.pdf", "Backend Engineer job description")
+
+    assert "recruiter analysis" in str(exc_info.value).lower()
+    assert exc_info.value.__cause__ is original_error
+    # Interview generation must never run after this failure.
+    assert interview_generator.calls == []
 
 
 def test_interview_generator_failure_raises_pipeline_error_with_cause():
@@ -267,7 +421,7 @@ def test_unexpected_exception_is_wrapped_not_leaked():
 
 
 def test_evidence_matcher_invoked_with_candidate_profile_and_job_requirements():
-    pipeline, _, _, evidence_matcher, _ = _build_pipeline()
+    pipeline, _, _, evidence_matcher, *_ = _build_pipeline()
 
     pipeline.analyze("candidate.pdf", "Backend Engineer job description")
 
@@ -277,8 +431,32 @@ def test_evidence_matcher_invoked_with_candidate_profile_and_job_requirements():
     assert called_requirements == JOB_REQUIREMENTS
 
 
+def test_alignment_scorer_invoked_with_job_requirements_and_evidence_matches():
+    pipeline, _, _, _, alignment_scorer, _, _ = _build_pipeline()
+
+    pipeline.analyze("candidate.pdf", "Backend Engineer job description")
+
+    assert len(alignment_scorer.calls) == 1
+    called_requirements, called_matches = alignment_scorer.calls[0]
+    assert called_requirements == JOB_REQUIREMENTS
+    assert called_matches == EVIDENCE_MATCHES
+
+
+def test_recruiter_analysis_generator_invoked_with_profile_requirements_matches_and_score():
+    pipeline, _, _, _, _, recruiter_analysis_generator, _ = _build_pipeline()
+
+    pipeline.analyze("candidate.pdf", "Backend Engineer job description")
+
+    assert len(recruiter_analysis_generator.calls) == 1
+    called_profile, called_requirements, called_matches, called_score = recruiter_analysis_generator.calls[0]
+    assert called_profile == CANDIDATE_PROFILE
+    assert called_requirements == JOB_REQUIREMENTS
+    assert called_matches == EVIDENCE_MATCHES
+    assert called_score == ALIGNMENT_SCORE
+
+
 def test_interview_generator_invoked_with_profile_requirements_and_matches():
-    pipeline, _, _, _, interview_generator = _build_pipeline()
+    pipeline, _, _, _, _, _, interview_generator = _build_pipeline()
 
     pipeline.analyze("candidate.pdf", "Backend Engineer job description")
 
@@ -297,6 +475,8 @@ def test_candidate_dossier_assembled_correctly():
     assert dossier.candidate_profile == CANDIDATE_PROFILE
     assert dossier.job_requirements == JOB_REQUIREMENTS
     assert dossier.evidence_matches == EVIDENCE_MATCHES
+    assert dossier.alignment_score == ALIGNMENT_SCORE
+    assert dossier.recruiter_analysis == RECRUITER_ANALYSIS
     assert dossier.interview_questions == INTERVIEW_QUESTIONS
     # Warnings surfaced by the JD analyzer are carried forward, unmodified.
     assert dossier.warnings == JOB_REQUIREMENTS.warnings
@@ -318,6 +498,23 @@ def test_dependency_injection_with_plain_duck_typed_objects():
         def match(self, candidate_profile, job_requirements):
             return []
 
+    class _MinimalAlignmentScorer:
+        def score(self, job_requirements, evidence_matches):
+            return AlignmentScore(
+                overall_score=0,
+                alignment_label="Minimal Alignment",
+                required_score=0.0,
+                preferred_score=0.0,
+                required_weight=0.0,
+                preferred_weight=0.0,
+                coverage=[],
+                methodology_note="No requirements were extracted.",
+            )
+
+    class _MinimalRecruiterAnalysisGenerator:
+        def generate(self, candidate_profile, job_requirements, evidence_matches, alignment_score):
+            return RecruiterAnalysis(summary="No requirements were extracted to analyze.")
+
     class _MinimalInterviewGenerator:
         def generate(self, candidate_profile, job_requirements, evidence_matches):
             return []
@@ -326,6 +523,8 @@ def test_dependency_injection_with_plain_duck_typed_objects():
         candidate_analyzer=_MinimalCandidateAnalyzer(),
         jd_analyzer=_MinimalJDAnalyzer(),
         evidence_matcher=_MinimalEvidenceMatcher(),
+        alignment_scorer=_MinimalAlignmentScorer(),
+        recruiter_analysis_generator=_MinimalRecruiterAnalysisGenerator(),
         interview_generator=_MinimalInterviewGenerator(),
         extract_document_fn=_fake_extract_document_fn(),
     )
@@ -334,15 +533,17 @@ def test_dependency_injection_with_plain_duck_typed_objects():
 
     assert isinstance(dossier, CandidateDossier)
     assert dossier.candidate_profile.full_name == "Minimal Candidate"
+    assert dossier.alignment_score.overall_score == 0
+    assert dossier.recruiter_analysis.summary
 
 
-def test_pipeline_module_does_not_import_google_genai():
-    """The pipeline orchestrator must never import google.genai directly.
+def test_pipeline_module_does_not_import_groq_sdk():
+    """The pipeline orchestrator must never import the Groq SDK directly.
 
     Checked via the actual parsed import statements (not a substring search
     over the source) so that prose in docstrings/comments explaining this
-    very constraint (which legitimately mentions "google.genai") can't
-    produce a false positive.
+    very constraint (which legitimately mentions "groq") can't produce a
+    false positive.
     """
     source = inspect.getsource(hirelens_pipeline_module)
     tree = ast.parse(source)
@@ -355,8 +556,8 @@ def test_pipeline_module_does_not_import_google_genai():
             imported_module_names.add(node.module)
             imported_module_names.update(f"{node.module}.{alias.name}" for alias in node.names)
 
-    assert not any(name == "google" or name.startswith("google.") for name in imported_module_names)
-    assert not hasattr(hirelens_pipeline_module, "genai")
+    assert not any(name == "groq" or name.startswith("groq.") for name in imported_module_names)
+    assert not hasattr(hirelens_pipeline_module, "groq")
 
 
 def test_empty_job_description_handling_delegates_to_jd_analyzer():
@@ -377,6 +578,8 @@ def test_empty_job_description_handling_delegates_to_jd_analyzer():
         candidate_analyzer=_FakeCandidateAnalyzer(profile=CANDIDATE_PROFILE),
         jd_analyzer=_StrictFakeJDAnalyzer(),
         evidence_matcher=_FakeEvidenceMatcher(matches=EVIDENCE_MATCHES),
+        alignment_scorer=_FakeAlignmentScorer(alignment_score=ALIGNMENT_SCORE),
+        recruiter_analysis_generator=_FakeRecruiterAnalysisGenerator(recruiter_analysis=RECRUITER_ANALYSIS),
         interview_generator=_FakeInterviewGenerator(questions=INTERVIEW_QUESTIONS),
         extract_document_fn=_fake_extract_document_fn(),
     )
@@ -388,11 +591,13 @@ def test_empty_job_description_handling_delegates_to_jd_analyzer():
 
 
 def test_create_classmethod_wires_all_services_to_shared_llm_service():
-    """HireLensPipeline.create() should build every sub-service around the same llm_service."""
+    """HireLensPipeline.create() should build every LLM-backed sub-service around the same llm_service."""
+    from src.services.alignment_scorer import AlignmentScorer
     from src.services.candidate_analyzer import CandidateAnalyzer
     from src.services.evidence_matcher import EvidenceMatcher
     from src.services.interview_generator import InterviewQuestionGenerator
     from src.services.jd_analyzer import JobDescriptionAnalyzer
+    from src.services.recruiter_analysis_generator import RecruiterAnalysisGenerator
 
     class _FakeLLMService:
         def generate_text(self, prompt, system_instruction=None):
@@ -405,4 +610,6 @@ def test_create_classmethod_wires_all_services_to_shared_llm_service():
     assert isinstance(pipeline._candidate_analyzer, CandidateAnalyzer)
     assert isinstance(pipeline._jd_analyzer, JobDescriptionAnalyzer)
     assert isinstance(pipeline._evidence_matcher, EvidenceMatcher)
+    assert isinstance(pipeline._alignment_scorer, AlignmentScorer)
+    assert isinstance(pipeline._recruiter_analysis_generator, RecruiterAnalysisGenerator)
     assert isinstance(pipeline._interview_generator, InterviewQuestionGenerator)

@@ -24,10 +24,10 @@ is injected at all (avoiding an unnecessary call), and per-requirement
 whenever the LLM call fails, returns malformed output, or fails schema
 validation — so a single bad LLM response never crashes the whole batch.
 
-This module depends only on the reusable :class:`GeminiLLMService`
-abstraction (``src.services.llm_service``) — it never imports
-``google.genai`` directly — and every generated question is validated
-against the existing ``InterviewQuestion`` Pydantic model.
+This module depends only on the reusable :class:`GroqLLMService`
+abstraction (``src.services.llm_service``) — it never imports the Groq SDK
+directly — and every generated question is validated against the existing
+``InterviewQuestion`` Pydantic model.
 
 SECURITY NOTE: Candidate personal information, raw prompts, and raw LLM
 responses are never logged by this module. Only the requirement text and
@@ -51,7 +51,7 @@ from src.models.schemas import (
     JobRequirements,
     RequirementImportance,
 )
-from src.services.llm_service import GeminiLLMService, LLMServiceError
+from src.services.llm_service import GroqLLMService, LLMServiceError
 
 # Matches a JSON payload wrapped in a markdown code fence, e.g. ```json ... ```
 _CODE_FENCE_RE = re.compile(r"^```(?:json)?\s*(.*?)\s*```$", re.DOTALL | re.IGNORECASE)
@@ -138,7 +138,7 @@ class InterviewQuestionGeneratorError(Exception):
 class InterviewQuestionGenerator:
     """Generates evidence-grounded interview questions for job requirements.
 
-    Uses an injected :class:`GeminiLLMService` (or any compatible stub/mock
+    Uses an injected :class:`GroqLLMService` (or any compatible stub/mock
     exposing ``generate_text(prompt, system_instruction=None) -> str``) as
     the primary question-generation path when available, and a
     deterministic, template-based fallback otherwise (or whenever the LLM
@@ -146,7 +146,7 @@ class InterviewQuestionGenerator:
     given requirement).
     """
 
-    def __init__(self, llm_service: GeminiLLMService | None = None) -> None:
+    def __init__(self, llm_service: GroqLLMService | None = None) -> None:
         """Initialize the generator.
 
         Args:

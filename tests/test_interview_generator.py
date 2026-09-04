@@ -1,8 +1,8 @@
 """Tests for src/services/interview_generator.py.
 
-These tests never make real Gemini API calls: a fake LLM service is
+These tests never make real Groq API calls: a fake LLM service is
 injected into ``InterviewQuestionGenerator`` in place of
-``GeminiLLMService``.
+``GroqLLMService``.
 """
 
 from __future__ import annotations
@@ -28,7 +28,7 @@ from src.services.llm_service import LLMServiceError
 
 
 class _FakeLLMService:
-    """Stub for GeminiLLMService that records calls and returns a canned response."""
+    """Stub for GroqLLMService that records calls and returns a canned response."""
 
     def __init__(self, response_text: str | None = None, error: Exception | None = None):
         self.response_text = response_text
@@ -286,7 +286,7 @@ def test_llm_service_failure_falls_back_to_deterministic_question():
     requirement = _make_requirement("req-1", "Python")
     match = _make_match("req-1", "Python", EvidenceStatus.evidence_found, evidence=["Python"])
     job_requirements = JobRequirements(requirements=[requirement])
-    fake_llm = _FakeLLMService(error=LLMServiceError("Gemini API request failed."))
+    fake_llm = _FakeLLMService(error=LLMServiceError("Groq API request failed."))
     generator = InterviewQuestionGenerator(fake_llm)
 
     questions = generator.generate(CANDIDATE_PROFILE, job_requirements, [match])

@@ -19,15 +19,15 @@ ARCHITECTURE — hybrid matching:
    directly for requirement terms. This is fast, fully explainable, and
    needs no LLM call.
 2. Only when deterministic matching is inconclusive, and an LLM service was
-   injected, a Gemini call is used for semantic matching/verification —
+   injected, a Groq call is used for semantic matching/verification —
    scoped strictly to evidence-finding (never scoring, ranking, or hiring
    recommendations) and required to ground any returned evidence in the
    candidate data actually supplied.
 
-This module depends only on the reusable :class:`GeminiLLMService`
-abstraction (``src.services.llm_service``) — it never imports
-``google.genai`` directly — and every match is validated against the
-existing ``EvidenceMatch`` Pydantic model.
+This module depends only on the reusable :class:`GroqLLMService`
+abstraction (``src.services.llm_service``) — it never imports the Groq SDK
+directly — and every match is validated against the existing
+``EvidenceMatch`` Pydantic model.
 
 SECURITY NOTE: Candidate personal information, raw prompts, and raw LLM
 responses are never logged by this module. Only the structured fields
@@ -49,7 +49,7 @@ from src.models.schemas import (
     JobRequirement,
     JobRequirements,
 )
-from src.services.llm_service import GeminiLLMService, LLMServiceError
+from src.services.llm_service import GroqLLMService, LLMServiceError
 
 # ---------------------------------------------------------------------------
 # Confidence levels (design choice, documented for maintainers).
@@ -188,12 +188,12 @@ class EvidenceMatcher:
 
     Uses deterministic keyword/phrase matching against the candidate's
     structured fields first, and falls back to an injected
-    :class:`GeminiLLMService` (or any compatible stub/mock exposing
+    :class:`GroqLLMService` (or any compatible stub/mock exposing
     ``generate_text(prompt, system_instruction=None) -> str``) for semantic
     matching only when deterministic matching is inconclusive.
     """
 
-    def __init__(self, llm_service: GeminiLLMService | None = None) -> None:
+    def __init__(self, llm_service: GroqLLMService | None = None) -> None:
         """Initialize the matcher.
 
         Args:

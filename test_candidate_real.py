@@ -1,4 +1,4 @@
-from src.services.llm_service import GeminiLLMService
+from src.services.llm_service import GroqLLMService
 from src.services.candidate_analyzer import CandidateAnalyzer
 
 
@@ -50,9 +50,9 @@ Built a REST API for managing tasks using FastAPI and PostgreSQL.
 
 
 def main():
-    print("\nInitializing Gemini...")
+    print("\nInitializing Groq...")
 
-    llm_service = GeminiLLMService()
+    llm_service = GroqLLMService()
 
     analyzer = CandidateAnalyzer(llm_service)
 

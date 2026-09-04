@@ -1,4 +1,4 @@
-from src.services.llm_service import GeminiLLMService
+from src.services.llm_service import GroqLLMService
 from src.services.jd_analyzer import JobDescriptionAnalyzer
 
 
@@ -32,9 +32,9 @@ A Bachelor's degree in Computer Science or a related field is preferred.
 
 
 def main():
-    print("\nInitializing Gemini...")
+    print("\nInitializing Groq...")
 
-    llm_service = GeminiLLMService()
+    llm_service = GroqLLMService()
 
     analyzer = JobDescriptionAnalyzer(llm_service)
 
