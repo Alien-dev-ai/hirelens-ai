@@ -1,0 +1,312 @@
+{
+  "candidate_profile": {
+    "full_name": "Riley Morgan",
+    "email": null,
+    "phone": null,
+    "location": null,
+    "summary": "Building reliable backend systems for 4+ years. Comfortable across the stack: Python and Go for services, Postgres and MySQL for storage, containerizing everything with Docker, and shipping through CI on AWS.",
+    "skills": [
+      "Python",
+      "Go",
+      "Postgres",
+      "MySQL",
+      "Docker",
+      "AWS",
+      "CI",
+      "git",
+      "code review",
+      "API development",
+      "database migrations",
+      "pair programming"
+    ],
+    "experiences": [
+      {
+        "role": null,
+        "organization": "Fenwick Data",
+        "start_date": "2020",
+        "end_date": "present",
+        "description": "Day-to-day work included API development, database migrations, and pair programming."
+      },
+      {
+        "role": null,
+        "organization": null,
+        "start_date": null,
+        "end_date": null,
+        "description": "General web development at a small agency for two years."
+      }
+    ],
+    "education": [
+      "Computer Engineering (BEng) at Northfield Institute of Technology"
+    ],
+    "projects": [],
+    "certifications": [],
+    "links": []
+  },
+  "job_requirements": {
+    "role_title": "Backend Engineer",
+    "requirements": [
+      {
+        "id": "req-1",
+        "requirement": "Write production Python code",
+        "category": "skill",
+        "importance": "unclear"
+      },
+      {
+        "id": "req-2",
+        "requirement": "Shipped REST APIs before",
+        "category": "experience",
+        "importance": "unclear"
+      },
+      {
+        "id": "req-3",
+        "requirement": "Experience with FastAPI",
+        "category": "tool",
+        "importance": "preferred"
+      },
+      {
+        "id": "req-4",
+        "requirement": "Experience with relational databases such as PostgreSQL",
+        "category": "tool",
+        "importance": "unclear"
+      },
+      {
+        "id": "req-5",
+        "requirement": "Docker for packaging services",
+        "category": "tool",
+        "importance": "unclear"
+      },
+      {
+        "id": "req-6",
+        "requirement": "Source control using Git",
+        "category": "tool",
+        "importance": "unclear"
+      },
+      {
+        "id": "req-7",
+        "requirement": "Hands‑on AWS experience",
+        "category": "tool",
+        "importance": "preferred"
+      },
+      {
+        "id": "req-8",
+        "requirement": "Exposure to Kubernetes or another container‑orchestration platform",
+        "category": "tool",
+        "importance": "preferred"
+      },
+      {
+        "id": "req-9",
+        "requirement": "CS‑related degree",
+        "category": "education",
+        "importance": "preferred"
+      }
+    ],
+    "responsibilities": [
+      "Designing APIs",
+      "Maintaining database integrations",
+      "Working closely with frontend engineers",
+      "Taking part in code review"
+    ],
+    "warnings": [
+      "Years of experience not specified for the Python requirement.",
+      "Years of experience not specified for the REST API requirement.",
+      "Years of experience not specified for AWS, Kubernetes, and other tool requirements."
+    ]
+  },
+  "evidence_matches": [
+    {
+      "requirement_id": "req-1",
+      "requirement": "Write production Python code",
+      "status": "evidence_found",
+      "evidence": [
+        "Python"
+      ],
+      "explanation": "The requirement 'Write production Python code' is explicitly supported by information found in the candidate's submitted profile.",
+      "confidence": 0.95
+    },
+    {
+      "requirement_id": "req-2",
+      "requirement": "Shipped REST APIs before",
+      "status": "needs_verification",
+      "evidence": [
+        "API development",
+        "Day-to-day work included API development"
+      ],
+      "explanation": "The profile mentions API development, but does not explicitly state that REST APIs were shipped, so additional verification is required.",
+      "confidence": 0.4
+    },
+    {
+      "requirement_id": "req-3",
+      "requirement": "Experience with FastAPI",
+      "status": "no_evidence_found",
+      "evidence": [],
+      "explanation": "The candidate profile does not contain any explicit mention of FastAPI.",
+      "confidence": 0.55
+    },
+    {
+      "requirement_id": "req-4",
+      "requirement": "Experience with relational databases such as PostgreSQL",
+      "status": "evidence_found",
+      "evidence": [
+        "Postgres"
+      ],
+      "explanation": "The requirement 'Experience with relational databases such as PostgreSQL' is explicitly supported by information found in the candidate's submitted profile.",
+      "confidence": 0.95
+    },
+    {
+      "requirement_id": "req-5",
+      "requirement": "Docker for packaging services",
+      "status": "evidence_found",
+      "evidence": [
+        "Docker"
+      ],
+      "explanation": "The requirement 'Docker for packaging services' is explicitly supported by information found in the candidate's submitted profile.",
+      "confidence": 0.95
+    },
+    {
+      "requirement_id": "req-6",
+      "requirement": "Source control using Git",
+      "status": "evidence_found",
+      "evidence": [
+        "git"
+      ],
+      "explanation": "The requirement 'Source control using Git' is explicitly supported by information found in the candidate's submitted profile.",
+      "confidence": 0.95
+    },
+    {
+      "requirement_id": "req-7",
+      "requirement": "Hands‑on AWS experience",
+      "status": "evidence_found",
+      "evidence": [
+        "AWS"
+      ],
+      "explanation": "The requirement 'Hands‑on AWS experience' is explicitly supported by information found in the candidate's submitted profile.",
+      "confidence": 0.95
+    },
+    {
+      "requirement_id": "req-8",
+      "requirement": "Exposure to Kubernetes or another container‑orchestration platform",
+      "status": "no_evidence_found",
+      "evidence": [],
+      "explanation": "The profile does not contain any explicit mention of Kubernetes or another container-orchestration platform.",
+      "confidence": 0.55
+    },
+    {
+      "requirement_id": "req-9",
+      "requirement": "CS‑related degree",
+      "status": "evidence_found",
+      "evidence": [
+        "Computer Engineering (BEng) at Northfield Institute of Technology"
+      ],
+      "explanation": "The candidate's education lists a Bachelor of Engineering in Computer Engineering, which is a computer science‑related degree.",
+      "confidence": 0.65
+    }
+  ],
+  "alignment_score": {
+    "overall_score": 72,
+    "alignment_label": "Moderate Alignment",
+    "required_score": 0.0,
+    "preferred_score": 72.2,
+    "required_weight": 0.0,
+    "preferred_weight": 1.0,
+    "coverage": [
+      {
+        "importance": "preferred",
+        "total": 4,
+        "evidence_found": 2,
+        "no_evidence_found": 2,
+        "needs_verification": 0
+      },
+      {
+        "importance": "unclear",
+        "total": 5,
+        "evidence_found": 4,
+        "no_evidence_found": 0,
+        "needs_verification": 1
+      }
+    ],
+    "methodology_note": "Computed deterministically from evidence-match statuses, not by the LLM: each requirement earns 1.0 credit for 'evidence_found', 0.5 for 'needs_verification', and 0.0 for 'no_evidence_found' (no credit, not a claim the candidate lacks the skill). Required requirements are weighted 0% of the overall score; preferred/unclear-importance requirements are weighted 100%."
+  },
+  "recruiter_analysis": {
+    "summary": "The candidate shows a moderate alignment with the Backend Engineer role, reflected in the 72/100 score calculated using the provided evidence‑match methodology. Solid evidence is present for production Python coding, PostgreSQL experience, Docker usage, Git source control, hands‑on AWS work, and a Computer Engineering degree, all of which contribute positively to the alignment. The candidate’s résumé mentions API development as part of daily responsibilities, which partially supports the requirement of having shipped REST APIs, but this point needs verification. No evidence was found for FastAPI experience or exposure to Kubernetes or a similar container‑orchestration platform, indicating potential gaps in the preferred skill set. Overall, the candidate meets several key technical expectations while leaving a few preferred areas unverified or unsupported.",
+    "strengths": [
+      "Production Python coding (evidence_found)",
+      "Experience with relational databases such as PostgreSQL (evidence_found)",
+      "Docker for packaging services (evidence_found)",
+      "Source control using Git (evidence_found)",
+      "Hands‑on AWS experience (evidence_found)",
+      "CS‑related degree in Computer Engineering (evidence_found)"
+    ],
+    "gaps": [
+      "Shipped REST APIs before – partially evidenced, needs verification",
+      "Experience with FastAPI – not evidenced in the submitted CV",
+      "Exposure to Kubernetes or another container‑orchestration platform – not evidenced in the submitted CV"
+    ],
+    "validation_areas": [
+      "Confirm whether the candidate has shipped production REST APIs",
+      "Confirm any experience with FastAPI",
+      "Confirm any exposure to Kubernetes or other container‑orchestration platforms"
+    ]
+  },
+  "interview_questions": [
+    {
+      "question": "Can you walk me through a Python project you have developed that went into production, describing the problem you solved, the design and implementation decisions you made, and how you ensured the code met production standards for quality, performance, and maintainability?",
+      "focus_requirement": "Write production Python code",
+      "reason": "Evidence indicates the candidate mentions Python; the question seeks elaboration on concrete production experience with Python code.",
+      "priority": "medium"
+    },
+    {
+      "question": "Can you walk me through a REST API you have taken from development to production shipment, describing your specific role, the technologies used, and any key challenges you addressed?",
+      "focus_requirement": "Shipped REST APIs before",
+      "reason": "The candidate’s documents reference API development, but do not clearly confirm that they have shipped REST APIs; this question aims to verify that experience.",
+      "priority": "medium"
+    },
+    {
+      "question": "Can you describe any experience you have working with FastAPI, including the types of projects you’ve used it on, your specific responsibilities, and the outcomes of those efforts?",
+      "focus_requirement": "Experience with FastAPI",
+      "reason": "The candidate's submitted documents did not contain any explicit evidence of FastAPI experience, so the recruiter needs to explore this preferred requirement directly with the candidate.",
+      "priority": "medium"
+    },
+    {
+      "question": "I see you mention working with Postgres. Could you walk me through a specific project or task where you used PostgreSQL, describing the context, your responsibilities, and any challenges you addressed?",
+      "focus_requirement": "Experience with relational databases such as PostgreSQL",
+      "reason": "The candidate's documents reference Postgres, so this question seeks to obtain concrete details about their practical experience with PostgreSQL.",
+      "priority": "medium"
+    },
+    {
+      "question": "Can you walk me through a specific project where you used Docker to package a service, describing how you set up the Dockerfile, built the image, and managed its deployment?",
+      "focus_requirement": "Docker for packaging services",
+      "reason": "Evidence shows the candidate mentioned Docker, so the recruiter needs the candidate to elaborate on concrete experience with Docker in the context of packaging services.",
+      "priority": "medium"
+    },
+    {
+      "question": "Can you walk me through your experience using Git for source control, including any specific workflows, branching strategies, or projects where you applied it?",
+      "focus_requirement": "Source control using Git",
+      "reason": "The candidate’s documents reference Git, so the recruiter seeks the candidate to elaborate on their practical experience with this tool.",
+      "priority": "medium"
+    },
+    {
+      "question": "Can you describe a recent project where you directly worked with AWS services, including which services you used and what your specific responsibilities were?",
+      "focus_requirement": "Hands‑on AWS experience",
+      "reason": "Evidence of AWS is present in the candidate's documents, so the recruiter seeks a detailed explanation of the candidate's practical experience with AWS.",
+      "priority": "medium"
+    },
+    {
+      "question": "Can you describe any experience you have with Kubernetes or other container‑orchestration platforms, including any projects or tasks where you used them?",
+      "focus_requirement": "Exposure to Kubernetes or another container‑orchestration platform",
+      "reason": "The candidate's submitted documents did not contain explicit evidence of exposure to Kubernetes or similar platforms, so clarification is needed.",
+      "priority": "medium"
+    },
+    {
+      "question": "Can you walk me through your Computer Engineering (BEng) program at Northfield Institute of Technology, highlighting any coursework, projects, or experiences that are directly related to computer science?",
+      "focus_requirement": "CS‑related degree",
+      "reason": "Evidence of a Computer Engineering degree was found; the question seeks to clarify its relevance to a CS‑related qualification.",
+      "priority": "medium"
+    }
+  ],
+  "warnings": [
+    "Years of experience not specified for the Python requirement.",
+    "Years of experience not specified for the REST API requirement.",
+    "Years of experience not specified for AWS, Kubernetes, and other tool requirements."
+  ],
+  "generated_at": "2026-09-05T13:24:28.458445"
+}

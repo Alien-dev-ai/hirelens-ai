@@ -109,6 +109,67 @@ Verified against `requirements.txt` and the actual implementation:
 - **python-dotenv** — loads `GROQ_API_KEY` / `GROQ_MODEL` from `.env`
 - **pytest** — automated test suite
 
+## Integrations
+
+HireLens is built on two load-bearing, real integrations — not decorative
+dependencies. Each does genuine work the rest of the pipeline depends on,
+and each has its own tested error-handling path (see
+[`tests/`](tests/) and [`evaluation/`](evaluation/README.md)).
+
+### 1. Groq LLM API
+
+Groq (`groq` Python SDK, via `src/services/llm_service.py`) is the external
+AI/API integration HireLens uses for every language-understanding stage of
+the pipeline:
+
+- Candidate profile normalization and structured extraction (`CandidateAnalyzer`)
+- Job description analysis and requirement extraction (`JobDescriptionAnalyzer`)
+- Semantic evidence matching, as a fallback when deterministic keyword matching is inconclusive (`EvidenceMatcher`)
+- Recruiter analysis generation (`RecruiterAnalysisGenerator`)
+- Interview question generation (`InterviewQuestionGenerator`)
+
+Crucially, Groq is never treated as an unrestricted decision-maker. Every
+LLM response is validated against a strict Pydantic schema before it can
+flow further into the pipeline, and the **alignment score is computed
+entirely by deterministic application code** (`AlignmentScorer`) — the LLM
+is never asked to produce or adjust it. Several stages (recruiter analysis,
+interview questions) also fall back to a deterministic, template-based
+result if the LLM call fails or returns invalid output, so a single bad or
+unavailable LLM response degrades gracefully rather than corrupting the
+analysis. `llm_service.py` is the only module that imports the Groq SDK
+directly, isolating the rest of the codebase from any one provider (see the
+Gemini → Groq migration in
+[`evaluation/failure_analysis.md`](evaluation/failure_analysis.md)).
+
+### 2. Document Processing Tools
+
+HireLens integrates two document-parsing libraries in
+`src/extraction/document_extractor.py` to turn an uploaded candidate file
+into plain text before any analysis begins:
+
+- **python-docx** — extracts text from DOCX candidate documents.
+- **pypdf** — extracts text from PDF candidate documents.
+
+These tools read the recruiter's actual uploaded file and feed the
+resulting normalized text into the rest of the HireLens pipeline
+(candidate analysis, evidence matching, and everything downstream).
+Document parsing includes explicit validation and error handling for
+unsupported file types, missing files, and corrupted or unreadable
+documents — extraction never raises for these ordinary problems; it
+reports a clear, human-readable error back to the caller instead (see
+`ExtractedDocument.error_message` and `evaluation/test_cases.json`'s
+`TC-08`).
+
+### Why these integrations matter
+
+Groq provides the semantic AI capabilities that make evidence-grounded
+normalization, matching, and narrative synthesis possible in the first
+place — without it, HireLens would have no way to understand free-form CV
+or job description text. The document processing tools are what let a
+recruiter use their candidate's real CV file as-is: without them, a
+recruiter would have to manually copy and reformat every CV's contents
+into the system by hand before any analysis could happen at all.
+
 ## Project Structure
 
 ```
@@ -202,6 +263,19 @@ pytest
 ```
 
 `pytest.ini` scopes test discovery to the `tests/` directory, so the automated suite never makes a real Groq API call — every LLM-backed service is exercised against fakes/mocks. As of this writing, the suite passes with **157 tests**, covering document extraction, every pipeline stage (including the deterministic alignment scorer and the recruiter analysis generator's LLM/fallback paths), schema validation, and full end-to-end pipeline orchestration.
+
+## Evaluation
+
+Beyond the unit/integration test suite above, [`evaluation/`](evaluation/README.md) is a separate package that evaluates end-to-end *product* behavior against 12 recruiting-workflow scenarios (strong/moderate/low alignment, missing/ambiguous evidence, preferred-qualification handling, sparse CVs, invalid input, provider failure, formatting variation) — reusing this same pipeline and schemas, never reimplementing them.
+
+- [`evaluation/README.md`](evaluation/README.md) — how the package is organized and how to run it.
+- [`evaluation/test_cases.json`](evaluation/test_cases.json) — the 12 test cases (input, condition tested, expected behavior, pass/fail criteria).
+- [`evaluation/rubric.md`](evaluation/rubric.md) — the explicit evaluation rubric (evidence grounding, requirement classification, score behavior, error handling, output completeness, human decision boundary).
+- [`evaluation/baseline.md`](evaluation/baseline.md) — the manual-review workflow HireLens replaces, with measured vs. assumed vs. not-yet-measured metrics called out honestly.
+- [`evaluation/failure_analysis.md`](evaluation/failure_analysis.md) — four documented failure scenarios, including the real Gemini→Groq provider migration.
+- [`evaluation/results.md`](evaluation/results.md) — actual, measured results from the most recent evaluation run (regenerated by `run_evaluation.py`, never hand-edited).
+
+Run it with `python evaluation/run_evaluation.py` (deterministic + mocked cases only — no API cost by default; see `evaluation/README.md` for `--mode live`, which requires explicit opt-in since it makes real Groq API calls).
 
 A few root-level scripts (`test_groq.py`, `test_candidate_real.py`, `test_jd_real.py`, `test_pipeline_real.py`) are manual, real-API smoke tests — intentionally excluded from automated discovery since they consume API quota and require a valid `GROQ_API_KEY`. Run them directly (e.g. `python test_groq.py`) only when you want to verify a real Groq connection.
 

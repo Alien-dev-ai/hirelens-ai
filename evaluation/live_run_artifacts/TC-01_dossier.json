@@ -1,0 +1,299 @@
+{
+  "candidate_profile": {
+    "full_name": "Amara Chen",
+    "email": "amara.chen.eval@example.com",
+    "phone": null,
+    "location": "Remote",
+    "summary": "Backend engineer with 6 years of experience building REST APIs and scalable services.",
+    "skills": [
+      "Python",
+      "FastAPI",
+      "PostgreSQL",
+      "Docker",
+      "Git",
+      "AWS",
+      "Kubernetes"
+    ],
+    "experiences": [
+      {
+        "role": "Senior Backend Engineer",
+        "organization": "Nimbus Systems",
+        "start_date": "March 2021",
+        "end_date": "Present",
+        "description": "Built and maintained REST APIs using Python and FastAPI. Managed PostgreSQL database schemas and query optimization. Containerized services with Docker and deployed them to Kubernetes clusters on AWS. Used Git for version control and code review workflows."
+      },
+      {
+        "role": "Backend Developer",
+        "organization": "Vantage Cloud",
+        "start_date": "June 2019",
+        "end_date": "February 2021",
+        "description": "Developed internal tooling in Python. Used Git for source control and participated in peer code review."
+      }
+    ],
+    "education": [
+      "BSc Computer Science — State University"
+    ],
+    "projects": [
+      {
+        "name": "Order Processing API",
+        "description": "Built a REST API for order processing and fulfillment.",
+        "technologies": [
+          "FastAPI",
+          "PostgreSQL",
+          "Docker"
+        ],
+        "url": null
+      }
+    ],
+    "certifications": [
+      "AWS Certified Developer – Associate"
+    ],
+    "links": []
+  },
+  "job_requirements": {
+    "role_title": "Backend Engineer",
+    "requirements": [
+      {
+        "id": "req-1",
+        "requirement": "Strong experience with Python",
+        "category": "skill",
+        "importance": "required"
+      },
+      {
+        "id": "req-2",
+        "requirement": "Experience building REST APIs using FastAPI",
+        "category": "skill",
+        "importance": "required"
+      },
+      {
+        "id": "req-3",
+        "requirement": "Experience with PostgreSQL or another relational database",
+        "category": "skill",
+        "importance": "required"
+      },
+      {
+        "id": "req-4",
+        "requirement": "Experience with Docker",
+        "category": "skill",
+        "importance": "required"
+      },
+      {
+        "id": "req-5",
+        "requirement": "Experience with Git for version control",
+        "category": "skill",
+        "importance": "required"
+      },
+      {
+        "id": "req-6",
+        "requirement": "Experience with AWS",
+        "category": "skill",
+        "importance": "preferred"
+      },
+      {
+        "id": "req-7",
+        "requirement": "Experience with Kubernetes",
+        "category": "skill",
+        "importance": "preferred"
+      },
+      {
+        "id": "req-8",
+        "requirement": "Bachelor's degree in Computer Science or a related field",
+        "category": "education",
+        "importance": "preferred"
+      }
+    ],
+    "responsibilities": [
+      "Build and maintain backend services and APIs.",
+      "Design and maintain database integrations.",
+      "Collaborate with frontend engineers.",
+      "Participate in code reviews."
+    ],
+    "warnings": [
+      "Years of experience not specified for any skill requirements.",
+      "No seniority level (e.g., junior, mid, senior) indicated."
+    ]
+  },
+  "evidence_matches": [
+    {
+      "requirement_id": "req-1",
+      "requirement": "Strong experience with Python",
+      "status": "evidence_found",
+      "evidence": [
+        "Python"
+      ],
+      "explanation": "The requirement 'Strong experience with Python' is explicitly supported by information found in the candidate's submitted profile.",
+      "confidence": 0.95
+    },
+    {
+      "requirement_id": "req-2",
+      "requirement": "Experience building REST APIs using FastAPI",
+      "status": "evidence_found",
+      "evidence": [
+        "FastAPI"
+      ],
+      "explanation": "The requirement 'Experience building REST APIs using FastAPI' is explicitly supported by information found in the candidate's submitted profile.",
+      "confidence": 0.95
+    },
+    {
+      "requirement_id": "req-3",
+      "requirement": "Experience with PostgreSQL or another relational database",
+      "status": "evidence_found",
+      "evidence": [
+        "PostgreSQL",
+        "Built and maintained REST APIs using Python and FastAPI. Managed PostgreSQL database schemas and query optimization. Containerized services with Docker and deployed them to Kubernetes clusters on AWS. Used Git for version control and code review workflows."
+      ],
+      "explanation": "The requirement 'Experience with PostgreSQL or another relational database' is explicitly supported by information found in the candidate's submitted profile.",
+      "confidence": 0.95
+    },
+    {
+      "requirement_id": "req-4",
+      "requirement": "Experience with Docker",
+      "status": "evidence_found",
+      "evidence": [
+        "Docker",
+        "Built and maintained REST APIs using Python and FastAPI. Managed PostgreSQL database schemas and query optimization. Containerized services with Docker and deployed them to Kubernetes clusters on AWS. Used Git for version control and code review workflows."
+      ],
+      "explanation": "The requirement 'Experience with Docker' is explicitly supported by information found in the candidate's submitted profile.",
+      "confidence": 0.95
+    },
+    {
+      "requirement_id": "req-5",
+      "requirement": "Experience with Git for version control",
+      "status": "evidence_found",
+      "evidence": [
+        "Git",
+        "Built and maintained REST APIs using Python and FastAPI. Managed PostgreSQL database schemas and query optimization. Containerized services with Docker and deployed them to Kubernetes clusters on AWS. Used Git for version control and code review workflows."
+      ],
+      "explanation": "The requirement 'Experience with Git for version control' is explicitly supported by information found in the candidate's submitted profile.",
+      "confidence": 0.95
+    },
+    {
+      "requirement_id": "req-6",
+      "requirement": "Experience with AWS",
+      "status": "evidence_found",
+      "evidence": [
+        "AWS",
+        "Built and maintained REST APIs using Python and FastAPI. Managed PostgreSQL database schemas and query optimization. Containerized services with Docker and deployed them to Kubernetes clusters on AWS. Used Git for version control and code review workflows.",
+        "AWS Certified Developer – Associate"
+      ],
+      "explanation": "The requirement 'Experience with AWS' is explicitly supported by information found in the candidate's submitted profile.",
+      "confidence": 0.95
+    },
+    {
+      "requirement_id": "req-7",
+      "requirement": "Experience with Kubernetes",
+      "status": "evidence_found",
+      "evidence": [
+        "Kubernetes",
+        "Built and maintained REST APIs using Python and FastAPI. Managed PostgreSQL database schemas and query optimization. Containerized services with Docker and deployed them to Kubernetes clusters on AWS. Used Git for version control and code review workflows."
+      ],
+      "explanation": "The requirement 'Experience with Kubernetes' is explicitly supported by information found in the candidate's submitted profile.",
+      "confidence": 0.95
+    },
+    {
+      "requirement_id": "req-8",
+      "requirement": "Bachelor's degree in Computer Science or a related field",
+      "status": "evidence_found",
+      "evidence": [
+        "BSc Computer Science — State University"
+      ],
+      "explanation": "The requirement 'Bachelor's degree in Computer Science or a related field' is explicitly supported by information found in the candidate's submitted profile.",
+      "confidence": 0.85
+    }
+  ],
+  "alignment_score": {
+    "overall_score": 100,
+    "alignment_label": "Strong Alignment",
+    "required_score": 100.0,
+    "preferred_score": 100.0,
+    "required_weight": 0.7,
+    "preferred_weight": 0.3,
+    "coverage": [
+      {
+        "importance": "required",
+        "total": 5,
+        "evidence_found": 5,
+        "no_evidence_found": 0,
+        "needs_verification": 0
+      },
+      {
+        "importance": "preferred",
+        "total": 3,
+        "evidence_found": 3,
+        "no_evidence_found": 0,
+        "needs_verification": 0
+      }
+    ],
+    "methodology_note": "Computed deterministically from evidence-match statuses, not by the LLM: each requirement earns 1.0 credit for 'evidence_found', 0.5 for 'needs_verification', and 0.0 for 'no_evidence_found' (no credit, not a claim the candidate lacks the skill). Required requirements are weighted 70% of the overall score; preferred/unclear-importance requirements are weighted 30%."
+  },
+  "recruiter_analysis": {
+    "summary": "The candidate’s profile demonstrates a complete match to the Backend Engineer role, achieving a perfect alignment score of 100/100 based on the deterministic scoring methodology (full credit for each 'evidence_found' requirement). All required qualifications—strong Python experience, FastAPI-based REST API development, PostgreSQL relational database work, Docker containerization, and Git version control—are explicitly evidenced. Preferred qualifications are also fully supported, including hands‑on experience with AWS, Kubernetes, and a Bachelor’s degree in Computer Science, complemented by an AWS Certified Developer – Associate credential. No gaps were identified, indicating the candidate’s documented experience aligns comprehensively with both required and preferred criteria.",
+    "strengths": [
+      "Strong experience with Python",
+      "Experience building REST APIs using FastAPI",
+      "Experience with PostgreSQL or another relational database",
+      "Experience with Docker",
+      "Experience with Git for version control",
+      "Experience with AWS",
+      "Experience with Kubernetes",
+      "Bachelor's degree in Computer Science or a related field"
+    ],
+    "gaps": [],
+    "validation_areas": []
+  },
+  "interview_questions": [
+    {
+      "question": "Can you walk me through a recent project where you used Python extensively, describing the problem you addressed, the key libraries or frameworks you leveraged, and the outcome of your work?",
+      "focus_requirement": "Strong experience with Python",
+      "reason": "The candidate's documents mention Python, so the recruiter should ask them to elaborate on the depth and context of that experience.",
+      "priority": "high"
+    },
+    {
+      "question": "Could you walk me through a REST API you have built using FastAPI, describing the key endpoints, design decisions, and any challenges you encountered while implementing it?",
+      "focus_requirement": "Experience building REST APIs using FastAPI",
+      "reason": "The candidate’s documents mention FastAPI, so the recruiter should explore the depth and specifics of their REST API development experience.",
+      "priority": "high"
+    },
+    {
+      "question": "Can you walk me through a specific project where you designed and managed PostgreSQL database schemas, including any query optimization techniques you applied and the outcomes of those efforts?",
+      "focus_requirement": "Experience with PostgreSQL or another relational database",
+      "reason": "The candidate's documents reference PostgreSQL experience, so this question seeks to explore the depth and specifics of that experience.",
+      "priority": "high"
+    },
+    {
+      "question": "Can you walk me through a project where you containerized services using Docker, describing how you built the Docker images, managed the containers, and any challenges you encountered during deployment?",
+      "focus_requirement": "Experience with Docker",
+      "reason": "The candidate's documents mention Docker usage, so the question seeks to have them elaborate on that experience.",
+      "priority": "high"
+    },
+    {
+      "question": "Can you walk us through a recent project where you used Git for version control, describing your branching strategy, how you managed code reviews, and any challenges you overcame?",
+      "focus_requirement": "Experience with Git for version control",
+      "reason": "The candidate's documents mention using Git, so this question seeks to elaborate on that experience and understand their practical application of Git workflows.",
+      "priority": "high"
+    },
+    {
+      "question": "Can you walk me through a recent project where you utilized AWS, describing the specific AWS services you used, how you deployed and managed your application on AWS (including any use of Kubernetes), and how your AWS Certified Developer – Associate certification contributed to your decisions?",
+      "focus_requirement": "Experience with AWS",
+      "reason": "The candidate's documents mention AWS usage, deployment on AWS, and an AWS certification; this question seeks to elicit concrete details about that experience.",
+      "priority": "medium"
+    },
+    {
+      "question": "Can you walk me through a specific project where you deployed services to Kubernetes clusters on AWS, including the steps you took for containerization, deployment, scaling, and any challenges you faced?",
+      "focus_requirement": "Experience with Kubernetes",
+      "reason": "Evidence indicates the candidate mentions deploying to Kubernetes; the question seeks to elaborate on that experience for clarification.",
+      "priority": "low"
+    },
+    {
+      "question": "Can you tell me more about your BSc in Computer Science from State University, such as key coursework, projects, or any specializations you pursued?",
+      "focus_requirement": "Bachelor's degree in Computer Science or a related field",
+      "reason": "To invite the candidate to elaborate on the documented degree and provide additional context about their academic background.",
+      "priority": "medium"
+    }
+  ],
+  "warnings": [
+    "Years of experience not specified for any skill requirements.",
+    "No seniority level (e.g., junior, mid, senior) indicated."
+  ],
+  "generated_at": "2026-09-05T13:10:23.616356"
+}

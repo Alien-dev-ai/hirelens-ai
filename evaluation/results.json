@@ -1,0 +1,551 @@
+{
+  "runs": {
+    "TC-04": {
+      "id": "TC-04",
+      "name": "Missing required skill evidence",
+      "mode": "deterministic",
+      "started_at": "2026-09-05T13:27:54.962158+00:00",
+      "status": "PASS",
+      "actual_result": {
+        "status": "no_evidence_found",
+        "explanation": "No explicit evidence for 'Experience with Kubernetes' was found in the submitted candidate documents. This does NOT mean the candidate is missing this qualification \u2014 it means only that no supporting evidence was present in the documents reviewed.",
+        "overall_score": 0
+      },
+      "error": null,
+      "execution_time_seconds": 0.0002
+    },
+    "TC-05": {
+      "id": "TC-05",
+      "name": "Ambiguous / partial evidence",
+      "mode": "mocked",
+      "started_at": "2026-09-05T13:27:54.962888+00:00",
+      "status": "PASS",
+      "actual_result": {
+        "status": "needs_verification",
+        "evidence": [
+          "cloud-based deployment tools"
+        ],
+        "overall_score": 50
+      },
+      "error": null,
+      "execution_time_seconds": 0.0002
+    },
+    "TC-06": {
+      "id": "TC-06",
+      "name": "Preferred qualifications missing",
+      "mode": "deterministic",
+      "started_at": "2026-09-05T13:27:54.963130+00:00",
+      "status": "PASS",
+      "actual_result": {
+        "overall_score": 70,
+        "alignment_label": "Moderate Alignment",
+        "required_weight": 0.7,
+        "preferred_weight": 0.3,
+        "gaps": [
+          "'Preferred item req-5' was not evidenced in the submitted CV.",
+          "'Preferred item req-6' was not evidenced in the submitted CV.",
+          "'Preferred item req-7' was not evidenced in the submitted CV."
+        ]
+      },
+      "error": null,
+      "execution_time_seconds": 0.0003
+    },
+    "TC-07": {
+      "id": "TC-07",
+      "name": "Sparse / minimal CV",
+      "mode": "mocked",
+      "started_at": "2026-09-05T13:27:54.963409+00:00",
+      "status": "PASS",
+      "actual_result": {
+        "overall_score": 0,
+        "alignment_label": "Minimal Alignment",
+        "requirement_count": 8,
+        "llm_calls_made": 19
+      },
+      "error": null,
+      "execution_time_seconds": 0.0165
+    },
+    "TC-08": {
+      "id": "TC-08",
+      "name": "Invalid or unsupported document input",
+      "mode": "deterministic",
+      "started_at": "2026-09-05T13:27:54.979946+00:00",
+      "status": "PASS",
+      "actual_result": {
+        "unsupported_extension": "Unsupported file type: '.txt'. Supported types are: .docx, .pdf.",
+        "missing_file": "File not found: /Users/macbook/hirelens-ai/evaluation/test_data/candidate_does_not_exist.docx",
+        "corrupted_document": "Failed to read DOCX file: File is not a zip file"
+      },
+      "error": null,
+      "execution_time_seconds": 0.0005
+    },
+    "TC-09": {
+      "id": "TC-09",
+      "name": "LLM / API service failure",
+      "mode": "mocked",
+      "started_at": "2026-09-05T13:27:54.980435+00:00",
+      "status": "PASS",
+      "actual_result": {
+        "quota_exceeded": {
+          "is_quota_exceeded": true,
+          "message": "Candidate analysis failed: Candidate analysis failed because the Groq API quota or rate limit has been reached. Please wait a bit and try again later."
+        },
+        "connection_failure": {
+          "is_quota_exceeded": false,
+          "message": "Candidate analysis failed: Candidate analysis failed because the LLM service could not generate a response: Could not reach the Groq API (model='fake-model'): simulated network failure for evaluation purposes."
+        }
+      },
+      "error": null,
+      "execution_time_seconds": 0.0234
+    },
+    "TC-11": {
+      "id": "TC-11",
+      "name": "Empty input validation",
+      "mode": "deterministic",
+      "started_at": "2026-09-05T13:27:55.003923+00:00",
+      "status": "PASS",
+      "actual_result": {
+        "candidate_analyzer_validated": [
+          "",
+          "   "
+        ],
+        "jd_analyzer_validated": [
+          "",
+          "   "
+        ],
+        "llm_ever_called": false
+      },
+      "error": null,
+      "execution_time_seconds": 0.0
+    },
+    "TC-12": {
+      "id": "TC-12",
+      "name": "Full dossier structural completeness & decision-boundary check",
+      "mode": "mocked",
+      "started_at": "2026-09-05T13:27:55.003957+00:00",
+      "status": "PASS",
+      "actual_result": {
+        "overall_score": 64,
+        "alignment_label": "Moderate Alignment",
+        "evidence_match_count": 8,
+        "interview_question_count": 8
+      },
+      "error": null,
+      "execution_time_seconds": 0.0128
+    },
+    "TC-01": {
+      "id": "TC-01",
+      "name": "Strong alignment candidate",
+      "mode": "live",
+      "started_at": "2026-09-05T13:09:51.929739+00:00",
+      "status": "PASS",
+      "actual_result": {
+        "overall_score": 100,
+        "alignment_label": "Strong Alignment",
+        "requirement_statuses": [
+          {
+            "requirement": "Strong experience with Python",
+            "status": "evidence_found",
+            "evidence": [
+              "Python"
+            ],
+            "confidence": 0.95
+          },
+          {
+            "requirement": "Experience building REST APIs using FastAPI",
+            "status": "evidence_found",
+            "evidence": [
+              "FastAPI"
+            ],
+            "confidence": 0.95
+          },
+          {
+            "requirement": "Experience with PostgreSQL or another relational database",
+            "status": "evidence_found",
+            "evidence": [
+              "PostgreSQL",
+              "Built and maintained REST APIs using Python and FastAPI. Managed PostgreSQL database schemas and query optimization. Containerized services with Docker and deployed them to Kubernetes clusters on AWS. Used Git for version control and code review workflows."
+            ],
+            "confidence": 0.95
+          },
+          {
+            "requirement": "Experience with Docker",
+            "status": "evidence_found",
+            "evidence": [
+              "Docker",
+              "Built and maintained REST APIs using Python and FastAPI. Managed PostgreSQL database schemas and query optimization. Containerized services with Docker and deployed them to Kubernetes clusters on AWS. Used Git for version control and code review workflows."
+            ],
+            "confidence": 0.95
+          },
+          {
+            "requirement": "Experience with Git for version control",
+            "status": "evidence_found",
+            "evidence": [
+              "Git",
+              "Built and maintained REST APIs using Python and FastAPI. Managed PostgreSQL database schemas and query optimization. Containerized services with Docker and deployed them to Kubernetes clusters on AWS. Used Git for version control and code review workflows."
+            ],
+            "confidence": 0.95
+          },
+          {
+            "requirement": "Experience with AWS",
+            "status": "evidence_found",
+            "evidence": [
+              "AWS",
+              "Built and maintained REST APIs using Python and FastAPI. Managed PostgreSQL database schemas and query optimization. Containerized services with Docker and deployed them to Kubernetes clusters on AWS. Used Git for version control and code review workflows.",
+              "AWS Certified Developer \u2013 Associate"
+            ],
+            "confidence": 0.95
+          },
+          {
+            "requirement": "Experience with Kubernetes",
+            "status": "evidence_found",
+            "evidence": [
+              "Kubernetes",
+              "Built and maintained REST APIs using Python and FastAPI. Managed PostgreSQL database schemas and query optimization. Containerized services with Docker and deployed them to Kubernetes clusters on AWS. Used Git for version control and code review workflows."
+            ],
+            "confidence": 0.95
+          },
+          {
+            "requirement": "Bachelor's degree in Computer Science or a related field",
+            "status": "evidence_found",
+            "evidence": [
+              "BSc Computer Science \u2014 State University"
+            ],
+            "confidence": 0.85
+          }
+        ],
+        "recruiter_analysis_summary": "The candidate\u2019s profile demonstrates a complete match to the Backend Engineer role, achieving a perfect alignment score of 100/100 based on the deterministic scoring methodology (full credit for each 'evidence_found' requirement). All required qualifications\u2014strong Python experience, FastAPI-based REST API development, PostgreSQL relational database work, Docker containerization, and Git version control\u2014are explicitly evidenced. Preferred qualifications are also fully supported, including hands\u2011on experience with AWS, Kubernetes, and a Bachelor\u2019s degree in Computer Science, complemented by an AWS Certified Developer \u2013 Associate credential. No gaps were identified, indicating the candidate\u2019s documented experience aligns comprehensively with both required and preferred criteria.",
+        "strengths": [
+          "Strong experience with Python",
+          "Experience building REST APIs using FastAPI",
+          "Experience with PostgreSQL or another relational database",
+          "Experience with Docker",
+          "Experience with Git for version control",
+          "Experience with AWS",
+          "Experience with Kubernetes",
+          "Bachelor's degree in Computer Science or a related field"
+        ],
+        "gaps": [],
+        "validation_areas": [],
+        "warnings": [
+          "Years of experience not specified for any skill requirements.",
+          "No seniority level (e.g., junior, mid, senior) indicated."
+        ],
+        "groq_model": "openai/gpt-oss-120b",
+        "full_dossier_artifact": "evaluation/live_run_artifacts/TC-01_dossier.json"
+      },
+      "error": null,
+      "execution_time_seconds": 31.6883
+    },
+    "TC-02": {
+      "id": "TC-02",
+      "name": "Moderate alignment candidate",
+      "mode": "live",
+      "started_at": "2026-09-05T13:10:56.153232+00:00",
+      "status": "PASS",
+      "actual_result": {
+        "overall_score": 42,
+        "alignment_label": "Limited Alignment",
+        "requirement_statuses": [
+          {
+            "requirement": "Strong experience with Python",
+            "status": "evidence_found",
+            "evidence": [
+              "Python"
+            ],
+            "confidence": 0.95
+          },
+          {
+            "requirement": "Experience building REST APIs using FastAPI",
+            "status": "no_evidence_found",
+            "evidence": [],
+            "confidence": 0.55
+          },
+          {
+            "requirement": "Experience with PostgreSQL or another relational database",
+            "status": "evidence_found",
+            "evidence": [
+              "MySQL",
+              "Queried and maintained MySQL databases",
+              "MySQL"
+            ],
+            "confidence": 0.65
+          },
+          {
+            "requirement": "Experience with Docker",
+            "status": "no_evidence_found",
+            "evidence": [],
+            "confidence": 0.55
+          },
+          {
+            "requirement": "Experience with Git for version control",
+            "status": "evidence_found",
+            "evidence": [
+              "Git"
+            ],
+            "confidence": 0.95
+          },
+          {
+            "requirement": "Experience with AWS",
+            "status": "no_evidence_found",
+            "evidence": [],
+            "confidence": 0.55
+          },
+          {
+            "requirement": "Experience with Kubernetes",
+            "status": "no_evidence_found",
+            "evidence": [],
+            "confidence": 0.55
+          },
+          {
+            "requirement": "Bachelor's degree in Computer Science or a related field",
+            "status": "no_evidence_found",
+            "evidence": [],
+            "confidence": 0.55
+          }
+        ],
+        "recruiter_analysis_summary": "The candidate demonstrates clear evidence of strong Python experience, relational database work (MySQL), and use of Git for version control, which aligns with three of the required technical skills. However, the submitted CV does not provide evidence for building REST APIs with FastAPI or for Docker usage, both of which are required for the role. Additionally, preferred qualifications such as AWS, Kubernetes, and a relevant bachelor's degree are not evidenced. According to the deterministic scoring methodology\u2014assigning full credit for evidenced requirements, half credit for partially verified, and none for missing\u2014the overall alignment score is 42 out of 100, indicating limited alignment with the role's expectations.",
+        "strengths": [
+          "Strong experience with Python",
+          "Experience with relational databases (MySQL)",
+          "Experience with Git for version control"
+        ],
+        "gaps": [
+          "Experience building REST APIs using FastAPI not evidenced in the submitted CV",
+          "Experience with Docker not evidenced in the submitted CV",
+          "Experience with AWS not evidenced in the submitted CV",
+          "Experience with Kubernetes not evidenced in the submitted CV",
+          "Bachelor's degree in Computer Science or a related field not evidenced in the submitted CV"
+        ],
+        "validation_areas": [
+          "Confirm experience building REST APIs using FastAPI",
+          "Confirm experience with Docker",
+          "Confirm any exposure to AWS services",
+          "Confirm any exposure to Kubernetes",
+          "Confirm educational background regarding a bachelor's degree in Computer Science or a related field"
+        ],
+        "warnings": [
+          "Years of experience not specified for skill requirements."
+        ],
+        "groq_model": "openai/gpt-oss-120b",
+        "full_dossier_artifact": "evaluation/live_run_artifacts/TC-02_dossier.json"
+      },
+      "error": null,
+      "execution_time_seconds": 82.7847
+    },
+    "TC-03": {
+      "id": "TC-03",
+      "name": "Low documented alignment candidate",
+      "mode": "live",
+      "started_at": "2026-09-05T13:12:49.288617+00:00",
+      "status": "PASS",
+      "actual_result": {
+        "overall_score": 0,
+        "alignment_label": "Minimal Alignment",
+        "requirement_statuses": [
+          {
+            "requirement": "Strong experience with Python",
+            "status": "no_evidence_found",
+            "evidence": [],
+            "confidence": 0.55
+          },
+          {
+            "requirement": "Experience building REST APIs using FastAPI",
+            "status": "no_evidence_found",
+            "evidence": [],
+            "confidence": 0.55
+          },
+          {
+            "requirement": "Experience with PostgreSQL or another relational database",
+            "status": "no_evidence_found",
+            "evidence": [],
+            "confidence": 0.55
+          },
+          {
+            "requirement": "Experience with Docker",
+            "status": "no_evidence_found",
+            "evidence": [],
+            "confidence": 0.55
+          },
+          {
+            "requirement": "Experience with Git for version control",
+            "status": "no_evidence_found",
+            "evidence": [],
+            "confidence": 0.55
+          },
+          {
+            "requirement": "Experience with AWS",
+            "status": "no_evidence_found",
+            "evidence": [],
+            "confidence": 0.55
+          },
+          {
+            "requirement": "Experience with Kubernetes",
+            "status": "no_evidence_found",
+            "evidence": [],
+            "confidence": 0.55
+          },
+          {
+            "requirement": "Bachelor's degree in Computer Science or a related field",
+            "status": "no_evidence_found",
+            "evidence": [],
+            "confidence": 0.55
+          }
+        ],
+        "recruiter_analysis_summary": "The candidate's submitted CV does not provide evidence for any of the listed requirements for the Backend Engineer role. According to the deterministic scoring methodology, each requirement contributes credit only when evidence is found (1.0) or needs verification (0.5). Because all requirements are marked as no_evidence_found, the total alignment score is 0/100, reflecting minimal alignment. Consequently, none of the required or preferred qualifications are currently supported by the available documentation, and the overall fit appears limited based on the provided evidence.",
+        "strengths": [],
+        "gaps": [
+          "Strong experience with Python \u2013 not evidenced in the submitted CV",
+          "Experience building REST APIs using FastAPI \u2013 not evidenced in the submitted CV",
+          "Experience with PostgreSQL or another relational database \u2013 not evidenced in the submitted CV",
+          "Experience with Docker \u2013 not evidenced in the submitted CV",
+          "Experience with Git for version control \u2013 not evidenced in the submitted CV",
+          "Experience with AWS \u2013 not evidenced in the submitted CV",
+          "Experience with Kubernetes \u2013 not evidenced in the submitted CV",
+          "Bachelor's degree in Computer Science or a related field \u2013 not evidenced in the submitted CV"
+        ],
+        "validation_areas": [
+          "Strong experience with Python",
+          "Experience building REST APIs using FastAPI",
+          "Experience with PostgreSQL or another relational database",
+          "Experience with Docker",
+          "Experience with Git for version control",
+          "Experience with AWS",
+          "Experience with Kubernetes",
+          "Bachelor's degree in Computer Science or a related field"
+        ],
+        "warnings": [
+          "Years of experience not specified for any requirement.",
+          "No specific level of proficiency (e.g., senior, junior) mentioned for the listed skills."
+        ],
+        "groq_model": "openai/gpt-oss-120b",
+        "full_dossier_artifact": "evaluation/live_run_artifacts/TC-03_dossier.json"
+      },
+      "error": null,
+      "execution_time_seconds": 95.512
+    },
+    "TC-10": {
+      "id": "TC-10",
+      "name": "Input variation (formatting / wording)",
+      "mode": "live",
+      "started_at": "2026-09-05T13:23:28.902794+00:00",
+      "status": "PASS",
+      "actual_result": {
+        "overall_score": 72,
+        "alignment_label": "Moderate Alignment",
+        "requirement_statuses": [
+          {
+            "requirement": "Write production Python code",
+            "status": "evidence_found",
+            "evidence": [
+              "Python"
+            ],
+            "confidence": 0.95
+          },
+          {
+            "requirement": "Shipped REST APIs before",
+            "status": "needs_verification",
+            "evidence": [
+              "API development",
+              "Day-to-day work included API development"
+            ],
+            "confidence": 0.4
+          },
+          {
+            "requirement": "Experience with FastAPI",
+            "status": "no_evidence_found",
+            "evidence": [],
+            "confidence": 0.55
+          },
+          {
+            "requirement": "Experience with relational databases such as PostgreSQL",
+            "status": "evidence_found",
+            "evidence": [
+              "Postgres"
+            ],
+            "confidence": 0.95
+          },
+          {
+            "requirement": "Docker for packaging services",
+            "status": "evidence_found",
+            "evidence": [
+              "Docker"
+            ],
+            "confidence": 0.95
+          },
+          {
+            "requirement": "Source control using Git",
+            "status": "evidence_found",
+            "evidence": [
+              "git"
+            ],
+            "confidence": 0.95
+          },
+          {
+            "requirement": "Hands\u2011on AWS experience",
+            "status": "evidence_found",
+            "evidence": [
+              "AWS"
+            ],
+            "confidence": 0.95
+          },
+          {
+            "requirement": "Exposure to Kubernetes or another container\u2011orchestration platform",
+            "status": "no_evidence_found",
+            "evidence": [],
+            "confidence": 0.55
+          },
+          {
+            "requirement": "CS\u2011related degree",
+            "status": "evidence_found",
+            "evidence": [
+              "Computer Engineering (BEng) at Northfield Institute of Technology"
+            ],
+            "confidence": 0.65
+          }
+        ],
+        "recruiter_analysis_summary": "The candidate shows a moderate alignment with the Backend Engineer role, reflected in the 72/100 score calculated using the provided evidence\u2011match methodology. Solid evidence is present for production Python coding, PostgreSQL experience, Docker usage, Git source control, hands\u2011on AWS work, and a Computer Engineering degree, all of which contribute positively to the alignment. The candidate\u2019s r\u00e9sum\u00e9 mentions API development as part of daily responsibilities, which partially supports the requirement of having shipped REST APIs, but this point needs verification. No evidence was found for FastAPI experience or exposure to Kubernetes or a similar container\u2011orchestration platform, indicating potential gaps in the preferred skill set. Overall, the candidate meets several key technical expectations while leaving a few preferred areas unverified or unsupported.",
+        "strengths": [
+          "Production Python coding (evidence_found)",
+          "Experience with relational databases such as PostgreSQL (evidence_found)",
+          "Docker for packaging services (evidence_found)",
+          "Source control using Git (evidence_found)",
+          "Hands\u2011on AWS experience (evidence_found)",
+          "CS\u2011related degree in Computer Engineering (evidence_found)"
+        ],
+        "gaps": [
+          "Shipped REST APIs before \u2013 partially evidenced, needs verification",
+          "Experience with FastAPI \u2013 not evidenced in the submitted CV",
+          "Exposure to Kubernetes or another container\u2011orchestration platform \u2013 not evidenced in the submitted CV"
+        ],
+        "validation_areas": [
+          "Confirm whether the candidate has shipped production REST APIs",
+          "Confirm any experience with FastAPI",
+          "Confirm any exposure to Kubernetes or other container\u2011orchestration platforms"
+        ],
+        "warnings": [
+          "Years of experience not specified for the Python requirement.",
+          "Years of experience not specified for the REST API requirement.",
+          "Years of experience not specified for AWS, Kubernetes, and other tool requirements."
+        ],
+        "groq_model": "openai/gpt-oss-120b",
+        "full_dossier_artifact": "evaluation/live_run_artifacts/TC-10_dossier.json"
+      },
+      "error": null,
+      "execution_time_seconds": 59.5605,
+      "history": [
+        {
+          "id": "TC-10",
+          "name": "Input variation (formatting / wording)",
+          "mode": "live",
+          "started_at": "not recorded exactly (captured from terminal output before history-tracking was added to the runner; this run genuinely occurred, real timing/error text below are verbatim from that run)",
+          "status": "ERROR",
+          "actual_result": null,
+          "error": "HireLensPipelineError: Candidate analysis failed: The LLM's response did not match the expected candidate profile structure.",
+          "execution_time_seconds": 2.8211
+        }
+      ]
+    }
+  },
+  "last_updated": "2026-09-05T13:27:55.016786+00:00"
+}

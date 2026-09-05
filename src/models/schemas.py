@@ -62,7 +62,9 @@ class ExtractedDocument(BaseModel):
 class CandidateExperience(BaseModel):
     """A single work experience entry parsed from a candidate document."""
 
-    role: str = Field(..., description="Job title or role held by the candidate.")
+    role: str | None = Field(
+        default=None, description="Job title or role held by the candidate."
+    )
     organization: str | None = Field(
         default=None, description="Name of the employer or organization."
     )

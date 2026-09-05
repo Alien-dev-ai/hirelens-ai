@@ -1,0 +1,2 @@
+Sam Okafor - Backend Developer
+This file is intentionally saved as .txt, which HireLens does not support, to exercise the unsupported-file-type error path.

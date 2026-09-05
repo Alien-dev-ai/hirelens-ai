@@ -71,7 +71,7 @@ information is not explicitly present in the CV — never invent a value):
   "skills": [string, ...],
   "experiences": [
     {{
-      "role": string,
+      "role": string or null,
       "organization": string or null,
       "start_date": string or null,
       "end_date": string or null,

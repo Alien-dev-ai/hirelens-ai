@@ -1,0 +1,239 @@
+{
+  "_meta": {
+    "description": "Evaluation test-case specification for HireLens AI. Human-readable and machine-loadable: evaluation/run_evaluation.py reads this file for case metadata (id, mode, scenario) and pairs each id with an executable check implemented in evaluation/harness.py. IDs here must match the CASES mapping in run_evaluation.py exactly.",
+    "modes": {
+      "deterministic": "Pure application code only (AlignmentScorer, document extraction, input validation). No LLM service is constructed or called. Zero cost, zero quota use.",
+      "mocked": "Exercises the real pipeline/service classes with a scripted fake LLM service (canned, deterministic responses) standing in for GroqLLMService, or a fake that deliberately raises a provider-style error. No network call is made and no real API quota is used.",
+      "live": "Runs the actual HireLensPipeline wired to the real GroqLLMService, making real Groq API calls. Costs API quota. Only executed with `--mode live --yes` after the planned call count has been shown."
+    },
+    "job_descriptions": {
+      "backend_engineer_bulleted": "Canonical bulleted JD used for TC-01/TC-02/TC-03 so results are comparable across candidates with different evidence strength.",
+      "backend_engineer_prose": "A prose-style rewrite of the same role's requirements (synonyms, no bullet lists) used only by TC-10 to test formatting/wording robustness."
+    }
+  },
+  "test_cases": [
+    {
+      "id": "TC-01",
+      "name": "Strong alignment candidate",
+      "mode": "live",
+      "condition_tested": "Candidate has explicit evidence for nearly all required and preferred qualifications.",
+      "candidate_input": "test_data/candidate_strong.docx",
+      "job_description_input": "backend_engineer_bulleted",
+      "expected_behavior": "Most required and preferred requirements are classified 'evidence_found'; overall_score falls in the Strong/Moderate Alignment range; recruiter analysis strengths list is non-empty and references the matched requirements; no hiring decision is stated or implied.",
+      "pass_fail_criteria": [
+        "Pipeline completes without raising HireLensPipelineError.",
+        "alignment_score.overall_score >= 65.",
+        "At least 3 of 5 required requirements have status 'evidence_found'.",
+        "recruiter_analysis.strengths is non-empty.",
+        "No forbidden hiring-decision phrase appears in any generated text (see rubric.md)."
+      ],
+      "important_assertions": [
+        "len(evidence_matches) == len(job_requirements.requirements)",
+        "alignment_score.alignment_label in {'Strong Alignment', 'Moderate Alignment'}",
+        "interview_questions is non-empty"
+      ],
+      "estimated_live_llm_calls": "candidate analysis (1) + JD analysis (1) + evidence matching (0-8, data-dependent) + recruiter analysis (1) + interview questions (1 per requirement, ~8) ≈ 11-19 calls"
+    },
+    {
+      "id": "TC-02",
+      "name": "Moderate alignment candidate",
+      "mode": "live",
+      "condition_tested": "Candidate matches some major requirements (Python, REST APIs, a relational database, Git) but has meaningful gaps (no Docker, no AWS/Kubernetes, no CS degree, MySQL instead of PostgreSQL).",
+      "candidate_input": "test_data/candidate_moderate.docx",
+      "job_description_input": "backend_engineer_bulleted",
+      "expected_behavior": "A mix of 'evidence_found', 'needs_verification', and 'no_evidence_found' across requirements; overall_score falls in a middle band, clearly below TC-01's; gaps are phrased as 'not evidenced', never as a confirmed absence.",
+      "pass_fail_criteria": [
+        "Pipeline completes without raising HireLensPipelineError.",
+        "alignment_score.overall_score is lower than TC-01's overall_score (when both have been run).",
+        "recruiter_analysis.gaps is non-empty.",
+        "No gap is phrased as 'lacks' / 'does not have' / 'is unqualified' — must read as 'not evidenced'."
+      ],
+      "important_assertions": [
+        "len(evidence_matches) == len(job_requirements.requirements)",
+        "At least one requirement has status != 'evidence_found'"
+      ],
+      "estimated_live_llm_calls": "≈ 11-19 calls (same shape as TC-01; see that case's note)"
+    },
+    {
+      "id": "TC-03",
+      "name": "Low documented alignment candidate",
+      "mode": "live",
+      "condition_tested": "Candidate has very limited evidence relevant to the role (no backend/Python-specific experience at all).",
+      "candidate_input": "test_data/candidate_low.docx",
+      "job_description_input": "backend_engineer_bulleted",
+      "expected_behavior": "Most or all required requirements are classified 'no_evidence_found'; overall_score falls in the Limited/Minimal Alignment range; every 'no evidence' explanation is phrased neutrally, never as a claim the candidate is unqualified.",
+      "pass_fail_criteria": [
+        "Pipeline completes without raising HireLensPipelineError.",
+        "alignment_score.overall_score < 50.",
+        "alignment_score.alignment_label in {'Limited Alignment', 'Minimal Alignment'}.",
+        "No explanation/gap text contains a forbidden hiring-decision or confirmed-absence phrase (see rubric.md)."
+      ],
+      "important_assertions": [
+        "len(evidence_matches) == len(job_requirements.requirements)",
+        "recruiter_analysis.validation_areas is non-empty (there is plenty left to verify with the candidate directly)"
+      ],
+      "estimated_live_llm_calls": "≈ 11-19 calls (same shape as TC-01; see that case's note)"
+    },
+    {
+      "id": "TC-04",
+      "name": "Missing required skill evidence",
+      "mode": "deterministic",
+      "condition_tested": "A required job requirement (Kubernetes) has no supporting evidence anywhere in the candidate's structured profile.",
+      "candidate_input": "inline CandidateProfile: skills=['Python', 'Docker', 'Git'], no mention of Kubernetes anywhere",
+      "job_description_input": "inline single required JobRequirement: 'Experience with Kubernetes'",
+      "expected_behavior": "EvidenceMatcher (deterministic path, no LLM) returns status='no_evidence_found' for the Kubernetes requirement. The explanation states this does NOT mean the candidate lacks the skill — only that no evidence was found in the submitted documents. It must never claim the candidate lacks/is missing/is unqualified for the skill.",
+      "pass_fail_criteria": [
+        "EvidenceMatch.status == EvidenceStatus.no_evidence_found",
+        "EvidenceMatch.evidence == []",
+        "Explanation contains 'does not mean' / 'does NOT mean' (case-insensitive) framing.",
+        "Explanation does NOT contain any forbidden phrase ('lacks', 'unqualified', 'does not have', 'is missing') describing the candidate.",
+        "Feeding this single match through AlignmentScorer yields 0.0 credit for this requirement, never a negative penalty."
+      ],
+      "important_assertions": [
+        "No LLM service is constructed or invoked to reach this result."
+      ]
+    },
+    {
+      "id": "TC-05",
+      "name": "Ambiguous / partial evidence",
+      "mode": "mocked",
+      "condition_tested": "Candidate mentions something related to a requirement (\"cloud-based deployment tools\") but the wording doesn't deterministically match the requirement term (\"cloud infrastructure experience\"), so the matcher falls back to LLM semantic matching, which itself reports ambiguity.",
+      "candidate_input": "inline CandidateProfile with a related-but-not-exact experience description",
+      "job_description_input": "inline single required JobRequirement: 'Experience with cloud infrastructure'",
+      "expected_behavior": "Deterministic matching is inconclusive (returns None); a scripted fake LLM service (not real Groq) is consulted and reports 'needs_verification' with a neutral explanation; the matcher does not upgrade this to 'evidence_found' on its own.",
+      "pass_fail_criteria": [
+        "EvidenceMatch.status == EvidenceStatus.needs_verification",
+        "AlignmentScorer credits this requirement at exactly 0.5 (partial credit), not 0.0 or 1.0.",
+        "Explanation does not claim certainty in either direction."
+      ],
+      "important_assertions": [
+        "The fake LLM service is a scripted stand-in returning a fixed canned response — no network call is made."
+      ]
+    },
+    {
+      "id": "TC-06",
+      "name": "Preferred qualifications missing",
+      "mode": "deterministic",
+      "condition_tested": "All required requirements have evidence; all preferred requirements do not. Verifies preferred requirements do not incorrectly dominate the alignment score.",
+      "candidate_input": "inline EvidenceMatch list: 4 required = evidence_found, 3 preferred = no_evidence_found",
+      "job_description_input": "inline JobRequirements: 4 required + 3 preferred",
+      "expected_behavior": "AlignmentScorer.score() computes required_score=100.0, preferred_score=0.0, and (per the documented 70/30 weighting) overall_score == round(0.7*100 + 0.3*0) == 70, landing in 'Moderate Alignment' or better — i.e. missing preferred items alone do not crater the score into 'Limited'/'Minimal Alignment'. The deterministic RecruiterAnalysisGenerator fallback phrases the missing preferred items as 'not evidenced', never as a confirmed absence.",
+      "pass_fail_criteria": [
+        "alignment_score.overall_score == 70",
+        "alignment_score.required_weight == 0.7 and alignment_score.preferred_weight == 0.3",
+        "alignment_score.alignment_label != 'Minimal Alignment' and alignment_score.alignment_label != 'Limited Alignment'",
+        "RecruiterAnalysis.gaps mentions the missing preferred requirements, phrased as 'not evidenced'."
+      ],
+      "important_assertions": [
+        "No LLM service is constructed or invoked (AlignmentScorer has no LLM dependency; RecruiterAnalysisGenerator is run with llm_service=None to force its deterministic template path)."
+      ]
+    },
+    {
+      "id": "TC-07",
+      "name": "Sparse / minimal CV",
+      "mode": "mocked",
+      "condition_tested": "A near-empty candidate document (one line of text, no skills/experience/education sections) is run through the full pipeline.",
+      "candidate_input": "test_data/candidate_sparse.docx",
+      "job_description_input": "backend_engineer_bulleted",
+      "expected_behavior": "The pipeline completes without raising an exception, using a scripted fake LLM service that returns a minimal, schema-valid CandidateProfile. The resulting dossier clearly communicates the evidence limitation (low score, requirements mostly 'no_evidence_found', validation areas populated) rather than crashing or silently guessing details not present in the document.",
+      "pass_fail_criteria": [
+        "Pipeline completes and returns a valid CandidateDossier (no exception).",
+        "alignment_score.overall_score is low (< 40).",
+        "recruiter_analysis.validation_areas is non-empty.",
+        "No generated text invents a skill/employer/degree not present in the sparse CV or the scripted fake LLM's canned profile."
+      ],
+      "important_assertions": [
+        "The fake LLM service returns fixed, scripted JSON — no real Groq call is made."
+      ]
+    },
+    {
+      "id": "TC-08",
+      "name": "Invalid or unsupported document input",
+      "mode": "deterministic",
+      "condition_tested": "Three invalid-input shapes: unsupported file extension (.txt), a missing file path, and a corrupted .docx (garbage bytes with a .docx extension).",
+      "candidate_input": "test_data/candidate_unsupported.txt; a non-existent path; test_data/candidate_corrupted.docx",
+      "job_description_input": "not reached — extraction fails before any analysis stage runs",
+      "expected_behavior": "extract_document() never raises; it returns ExtractedDocument(extraction_success=False, error_message=<clear reason>) for all three inputs. When run through HireLensPipeline.analyze(), the pipeline raises HireLensPipelineError mentioning 'extraction', and every downstream stage (candidate analysis, JD analysis, evidence matching, scoring, recruiter analysis, interview generation) is never invoked — proven with poison-pill fakes that raise if called.",
+      "pass_fail_criteria": [
+        "All three inputs: extraction_success is False and error_message is a non-empty, human-readable string.",
+        "HireLensPipeline.analyze() raises HireLensPipelineError containing 'extraction' for each input.",
+        "None of the six downstream poison-pill fakes are ever called."
+      ],
+      "important_assertions": [
+        "No LLM service is constructed at all for this case."
+      ]
+    },
+    {
+      "id": "TC-09",
+      "name": "LLM / API service failure",
+      "mode": "mocked",
+      "condition_tested": "The LLM provider fails during candidate analysis: (a) a quota/rate-limit error (recreating the project's real historical Gemini 429 failure, see failure_analysis.md), and (b) a connection/outage error.",
+      "candidate_input": "test_data/candidate_strong.docx",
+      "job_description_input": "backend_engineer_bulleted",
+      "expected_behavior": "A fake LLM service (no network call) raises LLMQuotaExceededError / LLMConnectionError from generate_text(). The pipeline wraps this as HireLensPipelineError with the original exception preserved as __cause__. HireLensPipelineError.is_quota_exceeded is True for the quota case and False for the connection case. The error message is clear and recruiter-facing, not a raw stack trace.",
+      "pass_fail_criteria": [
+        "HireLensPipelineError is raised in both scenarios (not the raw LLM exception).",
+        "is_quota_exceeded is True for the quota-exceeded fake, False for the connection-error fake.",
+        "str(exc) contains 'candidate analysis' and does not contain a raw Python traceback."
+      ],
+      "important_assertions": [
+        "No real Groq API call is made — the fake LLM service raises immediately."
+      ]
+    },
+    {
+      "id": "TC-10",
+      "name": "Input variation (formatting / wording)",
+      "mode": "live",
+      "condition_tested": "Same underlying role requirements, expressed as dense prose instead of bulleted sections, with synonyms ('source control' for Git, 'container-orchestration platform' for Kubernetes) and a differently-formatted candidate CV (single dense paragraph, no section headers).",
+      "candidate_input": "test_data/candidate_variation.docx",
+      "job_description_input": "backend_engineer_prose",
+      "expected_behavior": "The workflow remains usable: document extraction succeeds, candidate/JD analysis produce schema-valid structured output despite the unconventional formatting, and the pipeline completes end-to-end with no exception.",
+      "pass_fail_criteria": [
+        "Pipeline completes without raising HireLensPipelineError.",
+        "job_requirements.requirements is non-empty (the prose JD was still parsed into discrete requirements).",
+        "candidate_profile.skills or candidate_profile.experiences is non-empty (the paragraph CV was still parsed into structured fields).",
+        "alignment_score.overall_score is an int in [0, 100]."
+      ],
+      "important_assertions": [
+        "len(evidence_matches) == len(job_requirements.requirements)"
+      ],
+      "estimated_live_llm_calls": "≈ 8-15 calls, depending on how many requirements the prose JD is parsed into"
+    },
+    {
+      "id": "TC-11",
+      "name": "Empty input validation",
+      "mode": "deterministic",
+      "condition_tested": "Empty/whitespace-only CV text and empty/whitespace-only job description text, at the analyzer level.",
+      "candidate_input": "\"\" and \"   \" passed as cv_text",
+      "job_description_input": "\"\" and \"   \" passed as jd_text",
+      "expected_behavior": "CandidateAnalyzer.analyze() raises CandidateAnalyzerError and JobDescriptionAnalyzer.analyze() raises JobDescriptionAnalyzerError for empty/whitespace input, in both cases *before* ever calling the injected LLM service.",
+      "pass_fail_criteria": [
+        "CandidateAnalyzerError is raised for '' and for '   '.",
+        "JobDescriptionAnalyzerError is raised for '' and for '   '.",
+        "A poison-pill fake LLM service (raises AssertionError if generate_text is called) proves the LLM is never invoked for this validation."
+      ],
+      "important_assertions": [
+        "Validation happens synchronously in application code, not via a failed/expensive LLM round-trip."
+      ]
+    },
+    {
+      "id": "TC-12",
+      "name": "Full dossier structural completeness & decision-boundary check",
+      "mode": "mocked",
+      "condition_tested": "Whether a full CandidateDossier produced end-to-end (with a scripted fake LLM) contains every recruiter-facing section, and whether any generated text crosses the human decision boundary (states or implies a hiring decision).",
+      "candidate_input": "test_data/candidate_moderate.docx",
+      "job_description_input": "backend_engineer_bulleted",
+      "expected_behavior": "CandidateDossier has: one EvidenceMatch per requirement, an AlignmentScore with overall_score in [0,100] and a known alignment_label, a RecruiterAnalysis with a non-empty summary, and one InterviewQuestion per requirement. No field anywhere in the dossier contains a forbidden hiring-decision phrase (see rubric.md's blocklist).",
+      "pass_fail_criteria": [
+        "len(evidence_matches) == len(job_requirements.requirements)",
+        "len(interview_questions) == len(job_requirements.requirements)",
+        "alignment_score.alignment_label in the four known bands",
+        "recruiter_analysis.summary is non-empty",
+        "No forbidden phrase found in summary, strengths, gaps, validation_areas, or any evidence-match explanation."
+      ],
+      "important_assertions": [
+        "The fake LLM service returns fixed, scripted JSON — no real Groq call is made."
+      ]
+    }
+  ]
+}
