@@ -255,9 +255,26 @@ class InterviewQuestionGenerator:
             return None
 
         try:
-            return InterviewQuestion.model_validate(payload)
+            question = InterviewQuestion.model_validate(payload)
         except ValidationError:
             return None
+
+        # Guard against the LLM just restating the requirement instead of
+        # asking a question about it (e.g. under degraded/rushed output).
+        # Deliberately simple: exact match after trimming whitespace and
+        # case-folding only — no similarity threshold, so a legitimate
+        # question that happens to reuse requirement wording is never
+        # rejected. Treated the same as any other invalid LLM output: fall
+        # back to the deterministic template rather than raising.
+        if self._is_requirement_echo(question.question, requirement.requirement):
+            return None
+
+        return question
+
+    @staticmethod
+    def _is_requirement_echo(question_text: str, requirement_text: str) -> bool:
+        """True if ``question_text`` is just the requirement text restated."""
+        return question_text.strip().casefold() == requirement_text.strip().casefold()
 
     def _deterministic_question(
         self,

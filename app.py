@@ -524,7 +524,7 @@ if analyze_button:
 
         st.divider()
 
-        st.markdown("### 🧪 Interview Validation Areas")
+        st.markdown("### 📋 Recruiter Verification Checklist")
 
         if dossier.recruiter_analysis.validation_areas:
             for index, area in enumerate(dossier.recruiter_analysis.validation_areas, start=1):

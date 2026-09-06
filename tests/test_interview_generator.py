@@ -328,6 +328,108 @@ def test_llm_focus_requirement_is_always_overridden_with_ground_truth():
     assert questions[0].focus_requirement == "Python"
 
 
+# --- Requirement-echo guard ---------------------------------------------------
+
+
+def test_llm_question_identical_to_requirement_falls_back_to_deterministic():
+    """An LLM 'question' that's just the requirement text restated must be rejected and replaced."""
+    requirement = _make_requirement("req-1", "Experience with Adobe Premiere Pro")
+    match = _make_match(
+        "req-1", requirement.requirement, EvidenceStatus.evidence_found, evidence=["Edited videos using Adobe Premiere Pro."]
+    )
+    job_requirements = JobRequirements(requirements=[requirement])
+    llm_response = json.dumps(
+        {
+            "question": "Experience with Adobe Premiere Pro",
+            "focus_requirement": requirement.requirement,
+            "reason": "Checking this requirement.",
+            "priority": "medium",
+        }
+    )
+    fake_llm = _FakeLLMService(response_text=llm_response)
+    generator = InterviewQuestionGenerator(fake_llm)
+
+    questions = generator.generate(CANDIDATE_PROFILE, job_requirements, [match])
+
+    assert len(fake_llm.calls) == 1  # the LLM was still called once; only its output was rejected
+    assert questions[0].question != requirement.requirement
+    # The deterministic template for evidence_found always starts this way —
+    # proves the fallback path actually engaged, not just any different text.
+    assert questions[0].question.startswith("You mentioned the following in your submitted documents")
+    assert questions[0].focus_requirement == requirement.requirement
+
+
+def test_llm_question_matching_requirement_after_normalization_falls_back_to_deterministic():
+    """Whitespace/case differences alone must not let an echoed requirement pass as a real question."""
+    requirement = _make_requirement("req-1", "Experience with Adobe Premiere Pro")
+    match = _make_match(
+        "req-1", requirement.requirement, EvidenceStatus.evidence_found, evidence=["Edited videos using Adobe Premiere Pro."]
+    )
+    job_requirements = JobRequirements(requirements=[requirement])
+    llm_response = json.dumps(
+        {
+            "question": "  EXPERIENCE with adobe premiere pro  ",
+            "focus_requirement": requirement.requirement,
+            "reason": "Checking this requirement.",
+            "priority": "medium",
+        }
+    )
+    fake_llm = _FakeLLMService(response_text=llm_response)
+    generator = InterviewQuestionGenerator(fake_llm)
+
+    questions = generator.generate(CANDIDATE_PROFILE, job_requirements, [match])
+
+    assert questions[0].question.startswith("You mentioned the following in your submitted documents")
+    assert questions[0].focus_requirement == requirement.requirement
+
+
+def test_llm_question_sharing_wording_with_requirement_is_accepted():
+    """A real question that reuses requirement wording (but isn't identical to it) must NOT be rejected."""
+    requirement = _make_requirement("req-1", "Experience with Adobe Premiere Pro")
+    match = _make_match(
+        "req-1", requirement.requirement, EvidenceStatus.evidence_found, evidence=["Edited videos using Adobe Premiere Pro."]
+    )
+    job_requirements = JobRequirements(requirements=[requirement])
+    question_text = "Can you walk me through a project where your experience with Adobe Premiere Pro made a difference?"
+    llm_response = json.dumps(
+        {
+            "question": question_text,
+            "focus_requirement": requirement.requirement,
+            "reason": "Evidence for this requirement was found; this explores it in more depth.",
+            "priority": "medium",
+        }
+    )
+    fake_llm = _FakeLLMService(response_text=llm_response)
+    generator = InterviewQuestionGenerator(fake_llm)
+
+    questions = generator.generate(CANDIDATE_PROFILE, job_requirements, [match])
+
+    assert questions[0].question == question_text
+
+
+def test_valid_llm_question_for_no_evidence_found_remains_accepted():
+    """A genuine, well-formed LLM question with no wording overlap must still pass the guard."""
+    requirement = _make_requirement("req-1", "Experience with Kubernetes")
+    match = _make_match("req-1", requirement.requirement, EvidenceStatus.no_evidence_found)
+    job_requirements = JobRequirements(requirements=[requirement])
+    question_text = "Have you worked with container orchestration tools, and if so, could you describe that experience?"
+    llm_response = json.dumps(
+        {
+            "question": question_text,
+            "focus_requirement": requirement.requirement,
+            "reason": "No explicit evidence was found for this requirement in the submitted documents.",
+            "priority": "high",
+        }
+    )
+    fake_llm = _FakeLLMService(response_text=llm_response)
+    generator = InterviewQuestionGenerator(fake_llm)
+
+    questions = generator.generate(CANDIDATE_PROFILE, job_requirements, [match])
+
+    assert questions[0].question == question_text
+    assert questions[0].focus_requirement == requirement.requirement
+
+
 # --- Prompt grounding verification --------------------------------------------
 
 
