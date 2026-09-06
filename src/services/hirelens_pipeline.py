@@ -39,13 +39,19 @@ the same, already-validated evidence, and the LLM is never asked to
 invent or adjust the score itself.
 
 SECURITY NOTE: Candidate personal information and raw document text are
-never logged by this module — each underlying service is already
-responsible for not logging the data it handles, and the pipeline itself
-adds no logging of its own.
+never logged by this module. It emits lightweight, stage-boundary logging
+(via the standard ``logging`` module) recording only: the stage name,
+whether it started/succeeded/failed, and elapsed duration — plus, on
+failure, the exception's string representation, which every underlying
+service already keeps free of CV/JD content (static or Groq-SDK-derived
+error text only, never the prompt or document text). No CV text, JD text,
+extracted document contents, API keys, or credentials are ever logged.
 """
 
 from __future__ import annotations
 
+import logging
+import time
 from pathlib import Path
 from typing import Callable
 
@@ -78,6 +84,8 @@ from src.services.recruiter_analysis_generator import (
 # (or path-like string) and returns an ExtractedDocument. Matches the
 # signature of src.extraction.document_extractor.extract_document.
 DocumentExtractorFn = Callable[[str | Path], ExtractedDocument]
+
+logger = logging.getLogger(__name__)
 
 
 class HireLensPipelineError(Exception):
@@ -208,6 +216,9 @@ class HireLensPipeline:
                 original exception, where one exists, is preserved as the
                 raised error's ``__cause__``.
         """
+        pipeline_start = time.monotonic()
+        logger.info("HireLens pipeline started")
+
         document = self._extract_cv(cv_file_path)
         candidate_profile = self._analyze_candidate(document.text)
         job_requirements = self._analyze_job_description(job_description)
@@ -220,7 +231,7 @@ class HireLensPipeline:
             candidate_profile, job_requirements, evidence_matches
         )
 
-        return CandidateDossier(
+        dossier = CandidateDossier(
             candidate_profile=candidate_profile,
             job_requirements=job_requirements,
             evidence_matches=evidence_matches,
@@ -234,46 +245,93 @@ class HireLensPipeline:
             warnings=list(job_requirements.warnings),
         )
 
+        logger.info(
+            "HireLens pipeline completed successfully in %.2fs",
+            time.monotonic() - pipeline_start,
+        )
+        return dossier
+
+    # -- Stage-boundary logging helpers -------------------------------------
+    #
+    # Deliberately minimal: log only the stage name, timing, and (on
+    # failure) the already-sanitized exception text — never CV/JD content,
+    # extracted document text, API keys, or credentials. See this module's
+    # docstring "SECURITY NOTE".
+
+    @staticmethod
+    def _log_stage_start(stage: str) -> float:
+        logger.info("Stage started: %s", stage)
+        return time.monotonic()
+
+    @staticmethod
+    def _log_stage_success(stage: str, start: float) -> None:
+        logger.info("Stage completed: %s (%.2fs)", stage, time.monotonic() - start)
+
+    @staticmethod
+    def _log_stage_failure(stage: str, start: float, detail: object) -> None:
+        logger.error(
+            "Stage failed: %s (%.2fs): %s", stage, time.monotonic() - start, detail
+        )
+
     # -- Individual pipeline stages, each with its own error handling ------
 
     def _extract_cv(self, cv_file_path: str | Path) -> ExtractedDocument:
         """Stage 1: extract text from the candidate's CV file."""
+        stage = "1/7 document_extraction"
+        start = self._log_stage_start(stage)
         try:
             document = self._extract_document_fn(cv_file_path)
         except Exception as exc:
+            self._log_stage_failure(stage, start, exc)
             raise HireLensPipelineError(
                 f"Document extraction failed unexpectedly: {exc}"
             ) from exc
 
         if not document.extraction_success:
-            raise HireLensPipelineError(
-                f"Document extraction failed: "
-                f"{document.error_message or 'no text could be extracted from the document.'}"
+            error_detail = (
+                document.error_message or "no text could be extracted from the document."
             )
+            self._log_stage_failure(stage, start, error_detail)
+            raise HireLensPipelineError(f"Document extraction failed: {error_detail}")
 
+        self._log_stage_success(stage, start)
         return document
 
     def _analyze_candidate(self, cv_text: str) -> CandidateProfile:
         """Stage 2: analyze the extracted CV text into a candidate profile."""
+        stage = "2/7 candidate_analysis"
+        start = self._log_stage_start(stage)
         try:
-            return self._candidate_analyzer.analyze(cv_text)
+            profile = self._candidate_analyzer.analyze(cv_text)
         except CandidateAnalyzerError as exc:
+            self._log_stage_failure(stage, start, exc)
             raise HireLensPipelineError(f"Candidate analysis failed: {exc}") from exc
         except Exception as exc:
+            self._log_stage_failure(stage, start, exc)
             raise HireLensPipelineError(
                 f"Candidate analysis failed unexpectedly: {exc}"
             ) from exc
 
+        self._log_stage_success(stage, start)
+        return profile
+
     def _analyze_job_description(self, job_description: str) -> JobRequirements:
         """Stage 3: analyze the job description into structured requirements."""
+        stage = "3/7 job_description_analysis"
+        start = self._log_stage_start(stage)
         try:
-            return self._jd_analyzer.analyze(job_description)
+            requirements = self._jd_analyzer.analyze(job_description)
         except JobDescriptionAnalyzerError as exc:
+            self._log_stage_failure(stage, start, exc)
             raise HireLensPipelineError(f"Job description analysis failed: {exc}") from exc
         except Exception as exc:
+            self._log_stage_failure(stage, start, exc)
             raise HireLensPipelineError(
                 f"Job description analysis failed unexpectedly: {exc}"
             ) from exc
+
+        self._log_stage_success(stage, start)
+        return requirements
 
     def _match_evidence(
         self,
@@ -281,14 +339,21 @@ class HireLensPipeline:
         job_requirements: JobRequirements,
     ) -> list[EvidenceMatch]:
         """Stage 4: match the candidate profile against the job requirements."""
+        stage = "4/7 evidence_matching"
+        start = self._log_stage_start(stage)
         try:
-            return self._evidence_matcher.match(candidate_profile, job_requirements)
+            matches = self._evidence_matcher.match(candidate_profile, job_requirements)
         except EvidenceMatcherError as exc:
+            self._log_stage_failure(stage, start, exc)
             raise HireLensPipelineError(f"Evidence matching failed: {exc}") from exc
         except Exception as exc:
+            self._log_stage_failure(stage, start, exc)
             raise HireLensPipelineError(
                 f"Evidence matching failed unexpectedly: {exc}"
             ) from exc
+
+        self._log_stage_success(stage, start)
+        return matches
 
     def _compute_alignment_score(
         self,
@@ -296,14 +361,21 @@ class HireLensPipeline:
         evidence_matches: list[EvidenceMatch],
     ) -> AlignmentScore:
         """Stage 5: compute the deterministic candidate-to-role alignment score."""
+        stage = "5/7 alignment_scoring"
+        start = self._log_stage_start(stage)
         try:
-            return self._alignment_scorer.score(job_requirements, evidence_matches)
+            score = self._alignment_scorer.score(job_requirements, evidence_matches)
         except AlignmentScorerError as exc:
+            self._log_stage_failure(stage, start, exc)
             raise HireLensPipelineError(f"Alignment scoring failed: {exc}") from exc
         except Exception as exc:
+            self._log_stage_failure(stage, start, exc)
             raise HireLensPipelineError(
                 f"Alignment scoring failed unexpectedly: {exc}"
             ) from exc
+
+        self._log_stage_success(stage, start)
+        return score
 
     def _generate_recruiter_analysis(
         self,
@@ -313,16 +385,23 @@ class HireLensPipeline:
         alignment_score: AlignmentScore,
     ) -> RecruiterAnalysis:
         """Stage 6: synthesize the recruiter-facing analysis from evidence and score."""
+        stage = "6/7 recruiter_analysis_generation"
+        start = self._log_stage_start(stage)
         try:
-            return self._recruiter_analysis_generator.generate(
+            analysis = self._recruiter_analysis_generator.generate(
                 candidate_profile, job_requirements, evidence_matches, alignment_score
             )
         except RecruiterAnalysisGeneratorError as exc:
+            self._log_stage_failure(stage, start, exc)
             raise HireLensPipelineError(f"Recruiter analysis generation failed: {exc}") from exc
         except Exception as exc:
+            self._log_stage_failure(stage, start, exc)
             raise HireLensPipelineError(
                 f"Recruiter analysis generation failed unexpectedly: {exc}"
             ) from exc
+
+        self._log_stage_success(stage, start)
+        return analysis
 
     def _generate_interview_questions(
         self,
@@ -331,15 +410,22 @@ class HireLensPipeline:
         evidence_matches: list[EvidenceMatch],
     ) -> list[InterviewQuestion]:
         """Stage 7: generate interview questions from requirements and evidence."""
+        stage = "7/7 interview_question_generation"
+        start = self._log_stage_start(stage)
         try:
-            return self._interview_generator.generate(
+            questions = self._interview_generator.generate(
                 candidate_profile, job_requirements, evidence_matches
             )
         except InterviewQuestionGeneratorError as exc:
+            self._log_stage_failure(stage, start, exc)
             raise HireLensPipelineError(
                 f"Interview question generation failed: {exc}"
             ) from exc
         except Exception as exc:
+            self._log_stage_failure(stage, start, exc)
             raise HireLensPipelineError(
                 f"Interview question generation failed unexpectedly: {exc}"
             ) from exc
+
+        self._log_stage_success(stage, start)
+        return questions

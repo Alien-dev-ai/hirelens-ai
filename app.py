@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import logging
 import os
 import tempfile
 from pathlib import Path
@@ -11,6 +12,14 @@ from src.services.hirelens_pipeline import (
     HireLensPipeline,
     HireLensPipelineError,
 )
+
+# Application entry point: configure the standard logging module once so the
+# pipeline's stage-boundary logs (src/services/hirelens_pipeline.py) are
+# actually visible in the console. A no-op on Streamlit's script reruns,
+# since basicConfig() only takes effect the first time (no handlers exist
+# yet on the root logger). No CV/JD content is ever logged — see that
+# module's "SECURITY NOTE" docstring.
+logging.basicConfig(level=logging.INFO)
 
 
 # ============================================================
