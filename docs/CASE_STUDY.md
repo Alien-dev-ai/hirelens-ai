@@ -381,6 +381,9 @@ real API quota.
 - [`evaluation/results.md`](../evaluation/results.md) — the human-readable
   rendering of the same results, plus a "Prepared but not yet executed"
   section so it's always clear what has and hasn't actually been run.
+- [`evaluation/proxy_user_feedback.md`](../evaluation/proxy_user_feedback.md)
+  — an informal proxy-user usability evaluation (explicitly not recruiter
+  or HR-professional validation) — see §10 for what it found.
 
 Explicit pass/fail criteria for every case (e.g. "`overall_score >= 65`",
 "pipeline completes without raising `HireLensPipelineError`") are defined in
@@ -511,6 +514,51 @@ savings, an accuracy percentage, or any business impact figure. Where a
 metric was not collected, this case study says so rather than substituting
 an estimate.
 
+### Informal proxy-user evaluation
+
+Beyond the automated evaluation above, one informal proxy-user session has
+also been conducted, documented in full in
+[`evaluation/proxy_user_feedback.md`](../evaluation/proxy_user_feedback.md).
+**This is not recruiter or HR-professional validation.** The proxy user
+was not the developer and was not an HR professional or recruiter; they
+were familiar enough with job descriptions and CV terminology to
+understand the system's output, which is why the session is recorded as
+an informal usability evaluation rather than domain-expert validation.
+
+Two real candidate documents were run against the same Video Editor job
+description, as a contrast test:
+
+- **Scenario A** (the more relevant candidate profile) — **44/100,
+  Limited Alignment**.
+- **Scenario B** (a deliberately mismatched software/backend profile) —
+  **4/100, Minimal Alignment**.
+
+Two examples are not a statistically meaningful sample, and no accuracy
+claim is made from this contrast — it is reported only because the scores
+differed substantially, in the direction the contrast was designed to
+test.
+
+The proxy user reported that the output was clear, identified the
+requirement-by-requirement breakdown and the Recruiter Analysis as
+particularly useful, and understood the three evidence-status
+distinctions (`Evidence Found` / `Needs Verification` / `No Evidence
+Found`) without difficulty.
+
+**Feedback acted on:** the proxy user noted that the wording "No Evidence
+Found" read more clearly than alternative terminology. Checking this
+against the codebase found that `app.py`'s UI badges already used exactly
+that wording (`status_badge()`); the inconsistency was in `README.md`'s
+status table, which used slightly different phrasing ("No Explicit
+Evidence Found," "Needs Verification / Partial Evidence"). `README.md`
+was aligned to the UI's existing labels (commit `036fc56`) — no UI,
+prompt, schema, or scoring code was changed, since the UI already used the
+terminology the proxy user preferred.
+
+A second suggestion from this session — a faster, high-level
+"evidence-based alignment summary" — was recorded as a future UX
+consideration and has not been implemented (see
+`evaluation/proxy_user_feedback.md` §6 and §12 below).
+
 ---
 
 ## 11. Limitations
@@ -537,6 +585,12 @@ an estimate.
   output is, or is intended to be, sufficient on its own to make a hiring
   decision — every score and narrative is designed to be a starting point
   for a recruiter's own verification.
+- **Recruiter/HR-professional validation has not yet been performed.** One
+  informal proxy-user session has been conducted (§10,
+  `evaluation/proxy_user_feedback.md`), but the proxy user was explicitly
+  not an HR professional or recruiter, and that session does not
+  substitute for recruiter/HR testing. This distinction is preserved
+  everywhere the proxy session is referenced.
 - **Baseline business metrics have not been collected from production
   usage.** As detailed in §3 and §10, no timed manual-review study and no
   timed HireLens-assisted study have been conducted; the comparison to the
@@ -563,10 +617,13 @@ features.
 
 ### Week 1 — Learn from real or proxy recruiter usage
 
-- Run HireLens against a small set of real or realistic (anonymized/
-  proxy) candidate CVs and job descriptions, with a recruiter or
-  recruiter-proxy actually reviewing the output, to start closing the
-  "not yet measured" gap identified in `evaluation/baseline.md`.
+- **Partially done:** one informal proxy-user session has been conducted
+  (§10, `evaluation/proxy_user_feedback.md`) — two real CVs reviewed by a
+  non-recruiter proxy. Remaining work: run additional real or realistic
+  CVs/JDs past more than one proxy, and — the more important remaining
+  gap — get at least one actual recruiter or HR professional to review
+  the output, to start closing the "not yet measured" gap identified in
+  `evaluation/baseline.md`.
 - Collect structured recruiter feedback on the recruiter analysis and
   interview questions: which strengths/gaps felt useful and accurate,
   which felt off or oddly phrased, and where the "not evidenced" framing
