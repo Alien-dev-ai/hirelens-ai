@@ -72,8 +72,8 @@ HireLens distinguishes explicitly between three evidence states for every requir
 | Status | Meaning |
 |---|---|
 | **Evidence Found** | The requirement is explicitly supported by content in the submitted documents. |
-| **Needs Verification / Partial Evidence** | The available evidence is partial, indirect, or ambiguous. |
-| **No Explicit Evidence Found** | No supporting evidence was located in the submitted documents. |
+| **Needs Verification** | The available evidence is partial, indirect, or ambiguous. |
+| **No Evidence Found** | No supporting evidence was located in the submitted documents. |
 
 **Absence of evidence in the submitted CV is not evidence that the candidate lacks the skill.** A "no evidence found" result means only that the documents reviewed did not explicitly mention it — never that the candidate is unqualified, incapable, or should be rejected. This distinction is enforced throughout the codebase: the evidence matcher, the alignment scorer, and the recruiter analysis generator are all explicitly instructed (in code and in their LLM prompts) to phrase gaps as "not evidenced in the submitted CV," never as a confirmed absence — and every such gap is surfaced as an area for the recruiter to verify directly with the candidate, typically via the generated interview questions.
 
