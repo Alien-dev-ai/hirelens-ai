@@ -23,6 +23,7 @@ how many requests it will make.
 | [`baseline.md`](./baseline.md) | Honest description of the manual-review workflow HireLens replaces, and what has vs. hasn't actually been measured against it. |
 | [`failure_analysis.md`](./failure_analysis.md) | Four documented failure scenarios: the real Gemini→Groq quota migration, plus three reproduced failure modes (ambiguous evidence, malformed LLM output, invalid documents). |
 | [`results.md`](./results.md) / [`results.json`](./results.json) | Actual, measured results from the most recent run(s). Generated — do not hand-edit. |
+| [`proxy_user_feedback.md`](./proxy_user_feedback.md) | Informal proxy-user usability evaluation (not recruiter/HR validation) — output comprehension, contrast-test scores, and a UX improvement suggestion. |
 
 ## How the 12 cases are organized
 
