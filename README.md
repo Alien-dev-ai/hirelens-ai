@@ -111,12 +111,14 @@ Verified against `requirements.txt` and the actual implementation:
 
 ## Integrations
 
-HireLens is built on two load-bearing, real integrations — not decorative
-dependencies. Each does genuine work the rest of the pipeline depends on,
-and each has its own tested error-handling path (see
-[`tests/`](tests/) and [`evaluation/`](evaluation/README.md)).
+HireLens is built on real, load-bearing integrations — not decorative
+dependencies: one external AI/API service (Groq) and a set of local
+document-parsing libraries (python-docx, pypdf). Each does genuine work
+the rest of the pipeline depends on, and each has its own tested
+error-handling path (see [`tests/`](tests/) and
+[`evaluation/`](evaluation/README.md)).
 
-### 1. Groq LLM API
+### 1. Groq LLM API (external service)
 
 Groq (`groq` Python SDK, via `src/services/llm_service.py`) is the external
 AI/API integration HireLens uses for every language-understanding stage of
@@ -141,7 +143,7 @@ directly, isolating the rest of the codebase from any one provider (see the
 Gemini → Groq migration in
 [`evaluation/failure_analysis.md`](evaluation/failure_analysis.md)).
 
-### 2. Document Processing Tools
+### 2. Document Processing Tools (local libraries)
 
 HireLens integrates two document-parsing libraries in
 `src/extraction/document_extractor.py` to turn an uploaded candidate file
@@ -298,6 +300,37 @@ A few root-level scripts (`test_groq.py`, `test_candidate_real.py`, `test_jd_rea
 - The alignment score and recruiter analysis are decision support, not a prediction of job success or an automated accept/reject outcome.
 - The system does not use or infer protected characteristics (e.g. race, ethnicity, religion, gender, age, disability, marital status, nationality) in any matching, scoring, or analysis.
 - Recruiters should independently verify important claims — particularly anything flagged as a gap or needing verification — before making a decision.
+
+## Data Handling and Privacy Posture
+
+This describes what the current v1 prototype actually does with data — it
+is not a legal or compliance claim.
+
+- **No persistent storage.** HireLens has no database or storage layer;
+  there is no code path that saves a candidate's analysis results for
+  later retrieval.
+- **Uploaded CVs are temporary.** An uploaded file is written to the OS
+  temp directory only for the duration of one analysis run
+  (`tempfile.NamedTemporaryFile`) and is deleted immediately afterward,
+  whether the run succeeds or fails (`app.py`'s cleanup step). Deletion is
+  best-effort — a failure to delete is caught and ignored, and an abrupt
+  process crash before cleanup runs could in principle leave the file for
+  the OS's own temp-file cleanup to remove later.
+- **The pasted job description is never written to disk** — it exists
+  only in the running session's memory for that analysis.
+- **No authentication or access control exists.** Anyone who can reach a
+  running instance can use it; there are no accounts and no per-user data
+  isolation. This is a v1 scope decision — see Future Improvements.
+- **One external service receives document content: Groq.** The extracted
+  CV text and job description text are sent to the Groq API for analysis
+  (see Integrations, above) — the only third party that receives document
+  content. Document parsing (python-docx/pypdf) runs locally and sends
+  nothing anywhere.
+- **The JSON export is a client-side download**, not a server-side save —
+  HireLens keeps no copy after the download completes.
+
+No retention period, deletion guarantee, encryption standard, or
+compliance certification is claimed, because none is implemented.
 
 ## Future Improvements
 
