@@ -122,6 +122,224 @@ def test_match_found_inside_project_technologies_and_description():
     assert "Docker" in matches[1].evidence
 
 
+# --- Category-aware credential source scoping (education/certification/license) ---
+
+
+def test_education_requirement_not_satisfied_by_overlapping_skill():
+    """Regression test for the confirmed false positive: an education
+    requirement must not be satisfiable by an unrelated skill entry that
+    merely shares a word with it (e.g. 'media' in 'Social Media Content
+    Creation' vs. a Film/Media/Communications degree requirement)."""
+    profile = CandidateProfile(
+        skills=["Social Media Content Creation", "Microsoft Excel"],
+        education=["BA in Business Administration — State University"],
+    )
+    job_requirements = JobRequirements(
+        requirements=[
+            _make_requirement(
+                "req-1",
+                "Bachelor's degree in Film, Media, Communications, or a related field",
+                category="education",
+            )
+        ]
+    )
+    matcher = EvidenceMatcher()  # deterministic only — proves the fix at the deterministic layer
+
+    matches = matcher.match(profile, job_requirements)
+
+    assert matches[0].status == EvidenceStatus.no_evidence_found
+    assert matches[0].evidence == []
+    assert matches[0].confidence == 0.6  # deterministic no-evidence confidence, not the prior 0.95 skill-match bug
+
+
+def test_education_requirement_not_satisfied_by_overlapping_experience_text():
+    """An education requirement must not be satisfiable by work-experience
+    text that happens to share a word with it, either."""
+    profile = CandidateProfile(
+        education=["BA in Business Administration — State University"],
+        experiences=[
+            CandidateExperience(
+                role="Marketing Coordinator",
+                organization="Acme Co",
+                description="Created social media content and managed the brand Instagram account.",
+            )
+        ],
+    )
+    job_requirements = JobRequirements(
+        requirements=[
+            _make_requirement(
+                "req-1",
+                "Bachelor's degree in Film, Media, Communications, or a related field",
+                category="education",
+            )
+        ]
+    )
+    matcher = EvidenceMatcher()
+
+    matches = matcher.match(profile, job_requirements)
+
+    assert matches[0].status == EvidenceStatus.no_evidence_found
+    assert matches[0].evidence == []
+
+
+def test_education_requirement_matches_correct_education_entry():
+    """A genuinely matching education entry is still found via the education source."""
+    profile = CandidateProfile(education=["BSc Computer Science — State University"])
+    job_requirements = JobRequirements(
+        requirements=[
+            _make_requirement(
+                "req-1",
+                "Bachelor's degree in Computer Science or a related field",
+                category="education",
+            )
+        ]
+    )
+    matcher = EvidenceMatcher()
+
+    matches = matcher.match(profile, job_requirements)
+
+    assert matches[0].status == EvidenceStatus.evidence_found
+    assert matches[0].evidence == ["BSc Computer Science — State University"]
+
+
+def test_education_requirement_not_satisfied_by_different_explicit_degree():
+    """An explicit, non-matching degree on file must not be misread as satisfying
+    an unrelated education requirement."""
+    profile = CandidateProfile(education=["BA in Business Administration — State University"])
+    job_requirements = JobRequirements(
+        requirements=[_make_requirement("req-1", "Bachelor's degree in Computer Science", category="education")]
+    )
+    matcher = EvidenceMatcher()
+
+    matches = matcher.match(profile, job_requirements)
+
+    assert matches[0].status == EvidenceStatus.no_evidence_found
+    assert matches[0].evidence == []
+
+
+def test_education_requirement_falls_back_to_llm_when_deterministic_is_inconclusive():
+    """Scoping to the education source must not replace the LLM fallback — a
+    genuinely ambiguous/related-but-not-literal education match should still
+    reach the LLM."""
+    profile = CandidateProfile(education=["B.A. in Communication Studies - Central University"])
+    job_requirements = JobRequirements(
+        requirements=[
+            _make_requirement(
+                "req-1",
+                "Bachelor's degree in Film, Media Studies, or a related field",
+                category="education",
+            )
+        ]
+    )
+    llm_response = json.dumps(
+        {
+            "status": "evidence_found",
+            "evidence": ["B.A. in Communication Studies - Central University"],
+            "explanation": "The candidate's education lists a Communication Studies degree, a closely related field.",
+        }
+    )
+    fake_llm = _FakeLLMService(response_text=llm_response)
+    matcher = EvidenceMatcher(fake_llm)
+
+    matches = matcher.match(profile, job_requirements)
+
+    assert len(fake_llm.calls) == 1  # deterministic scoped matching was inconclusive; LLM was consulted
+    assert matches[0].status == EvidenceStatus.evidence_found
+
+
+def test_certification_requirement_not_satisfied_by_overlapping_skill():
+    """A certification requirement must not be satisfied merely because a
+    related skill (not an actual certification) shares words with it."""
+    profile = CandidateProfile(skills=["Project Management"], certifications=[])
+    job_requirements = JobRequirements(
+        requirements=[
+            _make_requirement(
+                "req-1", "Certification in Project Management or equivalent", category="certification"
+            )
+        ]
+    )
+    matcher = EvidenceMatcher()
+
+    matches = matcher.match(profile, job_requirements)
+
+    assert matches[0].status == EvidenceStatus.no_evidence_found
+    assert matches[0].evidence == []
+
+
+def test_certification_requirement_matches_certification_entry():
+    profile = CandidateProfile(certifications=["PMP - Project Management Professional"])
+    job_requirements = JobRequirements(
+        requirements=[
+            _make_requirement(
+                "req-1", "Certification in Project Management or equivalent", category="certification"
+            )
+        ]
+    )
+    matcher = EvidenceMatcher()
+
+    matches = matcher.match(profile, job_requirements)
+
+    assert matches[0].status == EvidenceStatus.evidence_found
+    assert matches[0].evidence == ["PMP - Project Management Professional"]
+
+
+def test_license_requirement_not_satisfied_by_overlapping_skill():
+    """License requirements have no dedicated source field, so they are scoped
+    to 'certification' (the existing field licenses are recorded under); an
+    unrelated skill mention must not satisfy one."""
+    profile = CandidateProfile(skills=["Registered Nurse duties"], certifications=[])
+    job_requirements = JobRequirements(
+        requirements=[
+            _make_requirement(
+                "req-1",
+                "Registered Nurse, Licensed Practical Nurse, or equivalent license",
+                category="license",
+            )
+        ]
+    )
+    matcher = EvidenceMatcher()
+
+    matches = matcher.match(profile, job_requirements)
+
+    assert matches[0].status == EvidenceStatus.no_evidence_found
+    assert matches[0].evidence == []
+
+
+def test_license_requirement_matches_certification_entry():
+    profile = CandidateProfile(certifications=["Registered Nurse (RN) License - State Board of Nursing"])
+    job_requirements = JobRequirements(
+        requirements=[
+            _make_requirement(
+                "req-1",
+                "Registered Nurse, Licensed Practical Nurse, or equivalent license",
+                category="license",
+            )
+        ]
+    )
+    matcher = EvidenceMatcher()
+
+    matches = matcher.match(profile, job_requirements)
+
+    assert matches[0].status == EvidenceStatus.evidence_found
+    assert matches[0].evidence == ["Registered Nurse (RN) License - State Board of Nursing"]
+
+
+def test_skill_category_requirement_still_searches_all_sources():
+    """Category scoping is specific to credential categories (education/
+    certification/license) — ordinary skill requirements must keep
+    searching all candidate sources, unchanged from prior behavior."""
+    profile = CandidateProfile(education=["BSc Computer Science, minor in Python programming"])
+    job_requirements = JobRequirements(
+        requirements=[_make_requirement("req-1", "Python", category="skill")]
+    )
+    matcher = EvidenceMatcher()
+
+    matches = matcher.match(profile, job_requirements)
+
+    assert matches[0].status == EvidenceStatus.evidence_found
+    assert matches[0].evidence == ["BSc Computer Science, minor in Python programming"]
+
+
 def test_no_evidence_found_status_when_nothing_matches():
     """A requirement with no supporting evidence anywhere gets no_evidence_found."""
     profile = CandidateProfile(skills=["Python", "SQL"])

@@ -113,6 +113,29 @@ _BOILERPLATE_PHRASES = (
 _YEARS_PATTERN = re.compile(r"\b\d+\+?\s*(?:years?|yrs?)\b", re.IGNORECASE)
 _SPLIT_PATTERN = re.compile(r",| and | or | / |/")
 
+# Requirement categories (as emitted by JobDescriptionAnalyzer, see
+# src/services/jd_analyzer.py) that represent a formal credential the
+# candidate either explicitly holds or does not. For these categories,
+# deterministic matching must be scoped to the candidate source label(s)
+# below rather than searching every collected source — an incidental word
+# overlap in an unrelated field (e.g. "media" in the skill "Social Media
+# Content Creation") is not evidence that the candidate holds a Film/Media
+# degree. Labels are the existing ``source_label`` values produced by
+# ``_collect_candidate_sources``; no parallel classification is introduced.
+#
+# ``CandidateProfile`` has no dedicated "license" field, so license
+# requirements are scoped to the "certification" source label — the
+# existing field where license-type credentials (e.g. "Registered Nurse
+# (RN) License") are recorded.
+#
+# Any category not listed here (e.g. "skill", "experience", "tool", or an
+# unrecognized/empty category) is left unscoped, preserving prior behavior.
+_CREDENTIAL_CATEGORY_SOURCE_LABELS: dict[str, frozenset[str]] = {
+    "education": frozenset({"education"}),
+    "certification": frozenset({"certification"}),
+    "license": frozenset({"certification"}),
+}
+
 # Matches a JSON payload wrapped in a markdown code fence, e.g. ```json ... ```
 _CODE_FENCE_RE = re.compile(r"^```(?:json)?\s*(.*?)\s*```$", re.DOTALL | re.IGNORECASE)
 
@@ -341,13 +364,17 @@ class EvidenceMatcher:
         if not sources:
             return None
 
+        scoped_sources = cls._scope_sources_for_category(requirement.category, sources)
+        if not scoped_sources:
+            return None
+
         requirement_lower = requirement.requirement.lower()
         terms = cls._extract_core_terms(requirement.requirement)
 
         matched_evidence: list[str] = []
         matched_via_skill = False
 
-        for source_label, source_text in sources:
+        for source_label, source_text in scoped_sources:
             source_lower = source_text.lower()
 
             is_match = False
@@ -386,6 +413,32 @@ class EvidenceMatcher:
             explanation=explanation,
             confidence=confidence,
         )
+
+    @staticmethod
+    def _scope_sources_for_category(
+        category: str | None,
+        sources: list[tuple[str, str]],
+    ) -> list[tuple[str, str]]:
+        """Restrict candidate sources to those relevant to a credential category.
+
+        For requirement categories that represent a formal credential (see
+        ``_CREDENTIAL_CATEGORY_SOURCE_LABELS``), deterministic matching must
+        only consider the corresponding structured source(s) — never
+        unrelated free-text fields such as skills, experience descriptions,
+        summary, or projects, where an incidental word overlap does not mean
+        the candidate holds the credential.
+
+        For every other category, all collected sources remain in scope,
+        preserving prior behavior unchanged.
+        """
+        if not category:
+            return sources
+
+        allowed_labels = _CREDENTIAL_CATEGORY_SOURCE_LABELS.get(category.strip().lower())
+        if allowed_labels is None:
+            return sources
+
+        return [source for source in sources if source[0] in allowed_labels]
 
     @staticmethod
     def _extract_core_terms(requirement_text: str) -> list[str]:

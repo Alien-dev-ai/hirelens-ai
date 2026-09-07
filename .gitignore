@@ -4,8 +4,6 @@ venv/
 env/
 
 # Environment variables and secrets
-.env
-.env.local
 
 # Python cache
 __pycache__/
@@ -18,6 +16,7 @@ __pycache__/
 .coverage
 htmlcov/
 
+temp_auto_push.bat
 # Type-checker / lint caches
 .mypy_cache/
 .ruff_cache/
@@ -27,7 +26,6 @@ htmlcov/
 Thumbs.db
 
 # IDE files
-.vscode/
 .idea/
 
 # Jupyter
@@ -39,3 +37,7 @@ Thumbs.db
 # Generated data
 data/outputs/*
 !data/outputs/.gitkeep
+.gitignore
+branch_structure.json
+config.bat
+node_modules
